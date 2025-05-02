@@ -1,24 +1,28 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import Layout from "./components/Layout";
+import PriceList from "./components/PriceList";
+import Cart from "./components/Cart";
+import GlobalStyles from "./styles/GlobalStyles";
 
 function App() {
+  const [currentPage, setCurrentPage] = useState("priceList");
+
+  const handleCartClick = () => {
+    setCurrentPage("cart");
+  };
+
+  const handleBackToPriceList = () => {
+    setCurrentPage("priceList");
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <GlobalStyles />
+      <Layout onCartClick={handleCartClick}>
+        {currentPage === "priceList" && <PriceList />}
+        {currentPage === "cart" && <Cart onBack={handleBackToPriceList} />}
+      </Layout>
+    </>
   );
 }
 

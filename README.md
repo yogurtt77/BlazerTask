@@ -1,70 +1,111 @@
-# Getting Started with Create React App
+# Прайс-листы
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Веб-приложение для просмотра и управления прайс-листами поставщиков.
 
-## Available Scripts
+## Особенности
 
-In the project directory, you can run:
+- Просмотр прайс-листов поставщиков
+- Фильтрация по категориям и регионам
+- Адаптивный дизайн для мобильных устройств
+- Корзина для сохранения выбранных товаров
 
-### `npm start`
+## Технологии
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- React
+- Styled Components
+- JavaScript
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Установка и запуск
 
-### `npm test`
+### Требования
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Node.js 14.x или выше
+- npm 6.x или выше
 
-### `npm run build`
+### Установка зависимостей
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Запуск в режиме разработки
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+npm start
+```
 
-### `npm run eject`
+Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000).
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Сборка для production
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm run build
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Деплой
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Деплой на Netlify
 
-## Learn More
+1. Создайте аккаунт на [Netlify](https://www.netlify.com/)
+2. Выполните сборку проекта:
+   ```bash
+   npm run build
+   ```
+3. Перетащите папку `build` в интерфейс Netlify или используйте Netlify CLI:
+   ```bash
+   npm install -g netlify-cli
+   netlify deploy --prod
+   ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Деплой на Vercel
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. Установите Vercel CLI:
+   ```bash
+   npm install -g vercel
+   ```
+2. Войдите в аккаунт:
+   ```bash
+   vercel login
+   ```
+3. Выполните деплой:
+   ```bash
+   vercel --prod
+   ```
 
-### Code Splitting
+### Деплой на GitHub Pages
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. Установите gh-pages:
+   ```bash
+   npm install --save-dev gh-pages
+   ```
+2. Добавьте в package.json:
+   ```json
+   "homepage": "https://yourusername.github.io/your-repo-name",
+   "scripts": {
+     "predeploy": "npm run build",
+     "deploy": "gh-pages -d build"
+   }
+   ```
+3. Выполните деплой:
+   ```bash
+   npm run deploy
+   ```
 
-### Analyzing the Bundle Size
+## Переменные окружения
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Проект использует следующие переменные окружения:
 
-### Making a Progressive Web App
+- `REACT_APP_API_URL` - URL API сервера
+- `REACT_APP_VERSION` - Версия приложения
+- `REACT_APP_ENV` - Окружение (development, production)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Структура проекта
 
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
+src/
+  ├── components/       # React компоненты
+  ├── data/            # Данные и моки
+  ├── styles/          # Глобальные стили
+  ├── App.js           # Главный компонент приложения
+  └── index.js         # Точка входа
+```
