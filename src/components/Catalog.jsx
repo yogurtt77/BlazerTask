@@ -42,6 +42,7 @@ const CloseButton = styled.button`
   border: none;
   cursor: pointer;
   color: #999;
+  z-index: 101;
 
   &:hover {
     color: #333;
@@ -71,6 +72,7 @@ const CatalogDropdown = styled.div`
     height: 100%;
     border-radius: 0;
     flex-direction: column;
+    overflow: hidden;
   }
 `;
 
@@ -81,6 +83,8 @@ const CategoryContainer = styled.div`
   @media (max-width: 768px) {
     flex-direction: column;
     height: 100%;
+    width: 100%;
+    overflow: hidden;
   }
 `;
 
@@ -91,9 +95,11 @@ const DepartmentsContainer = styled.div`
 
   @media (max-width: 768px) {
     width: 100%;
-    max-height: 25%;
+    height: calc(100% - 54px); /* Вычитаем высоту заголовка */
     border-right: none;
-    border-bottom: 1px solid #e0e0e0;
+    display: ${(props) => (props.mobileLevel === 0 ? "block" : "none")};
+    overflow-y: auto;
+    background-color: white;
   }
 `;
 
@@ -104,9 +110,11 @@ const SectionsContainer = styled.div`
 
   @media (max-width: 768px) {
     width: 100%;
-    max-height: 25%;
+    height: calc(100% - 54px); /* Вычитаем высоту заголовка */
     border-right: none;
-    border-bottom: 1px solid #e0e0e0;
+    display: ${(props) => (props.mobileLevel === 1 ? "block" : "none")};
+    overflow-y: auto;
+    background-color: white;
   }
 `;
 
@@ -117,9 +125,11 @@ const SubsectionsContainer = styled.div`
 
   @media (max-width: 768px) {
     width: 100%;
-    max-height: 25%;
+    height: calc(100% - 54px); /* Вычитаем высоту заголовка */
     border-right: none;
-    border-bottom: 1px solid #e0e0e0;
+    display: ${(props) => (props.mobileLevel === 2 ? "block" : "none")};
+    overflow-y: auto;
+    background-color: white;
   }
 `;
 
@@ -129,7 +139,10 @@ const GroupsContainer = styled.div`
 
   @media (max-width: 768px) {
     width: 100%;
-    max-height: 25%;
+    height: calc(100% - 54px); /* Вычитаем высоту заголовка */
+    display: ${(props) => (props.mobileLevel === 3 ? "block" : "none")};
+    overflow-y: auto;
+    background-color: white;
   }
 `;
 
@@ -139,6 +152,9 @@ const CategoryItem = styled.div`
   font-size: 13px;
   color: #333;
   position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
   &:hover {
     background-color: #f5f5f5;
@@ -160,6 +176,26 @@ const CategoryItem = styled.div`
       background-color: #0066cc;
     }
   `}
+
+  @media (max-width: 768px) {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 16px;
+    font-size: 14px;
+    background-color: white;
+  }
+`;
+
+const CategoryItemContent = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const CategoryArrow = styled.div`
+  @media (max-width: 768px) {
+    display: block;
+    margin-left: 8px;
+  }
+  display: none;
 `;
 
 const CategoryCode = styled.span`
@@ -177,6 +213,77 @@ const LoadingIndicator = styled.div`
   color: #666;
 `;
 
+const MobileHeader = styled.div`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 2px solid #009639;
+    background-color: white;
+    position: sticky;
+    top: 0;
+    z-index: 101;
+    width: 100%;
+
+    /* Фиксированная ширина для кнопок, чтобы заголовок был по центру */
+    & > button:first-child,
+    & > button:last-child {
+      width: 40px;
+    }
+
+    & > button:first-child {
+      text-align: left;
+    }
+
+    & > button:last-child {
+      text-align: right;
+    }
+  }
+`;
+
+const MobileBackButton = styled.button`
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  cursor: pointer;
+  color: #333;
+  padding: 0;
+  white-space: nowrap;
+  justify-content: flex-start;
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const MobileTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
+  flex-grow: 1;
+  text-align: center;
+`;
+
+const MobileCloseButton = styled.button`
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: pointer;
+  padding: 0;
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
 const Catalog = ({ onCategorySelect }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [catalogData, setCatalogData] = useState(null);
@@ -188,7 +295,25 @@ const Catalog = ({ onCategorySelect }) => {
   const [activeSubsection, setActiveSubsection] = useState(null);
   const [activeGroup, setActiveGroup] = useState(null);
 
+  // Состояние для мобильной навигации
+  const [mobileLevel, setMobileLevel] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
   const catalogRef = useRef(null);
+
+  // Определяем, является ли устройство мобильным
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, []);
 
   // Загрузка данных каталога
   useEffect(() => {
@@ -249,6 +374,8 @@ const Catalog = ({ onCategorySelect }) => {
     const handleClickOutside = (event) => {
       if (catalogRef.current && !catalogRef.current.contains(event.target)) {
         setIsOpen(false);
+        // Сбрасываем уровень мобильной навигации при закрытии
+        setMobileLevel(0);
       }
     };
 
@@ -259,6 +386,10 @@ const Catalog = ({ onCategorySelect }) => {
   }, []);
 
   const toggleCatalog = () => {
+    if (!isOpen) {
+      // При открытии каталога сбрасываем уровень мобильной навигации
+      setMobileLevel(0);
+    }
     setIsOpen(!isOpen);
   };
 
@@ -300,6 +431,11 @@ const Catalog = ({ onCategorySelect }) => {
         group: null,
       });
     }
+
+    // Для мобильной версии переходим на следующий уровень
+    if (isMobile) {
+      setMobileLevel(1);
+    }
   };
 
   const handleSectionClick = (sectionId) => {
@@ -330,6 +466,11 @@ const Catalog = ({ onCategorySelect }) => {
         group: null,
       });
     }
+
+    // Для мобильной версии переходим на следующий уровень
+    if (isMobile) {
+      setMobileLevel(2);
+    }
   };
 
   const handleSubsectionClick = (subsectionId) => {
@@ -345,6 +486,11 @@ const Catalog = ({ onCategorySelect }) => {
         group: null,
       });
     }
+
+    // Для мобильной версии переходим на следующий уровень
+    if (isMobile) {
+      setMobileLevel(3);
+    }
   };
 
   const handleGroupClick = (groupId) => {
@@ -358,6 +504,23 @@ const Catalog = ({ onCategorySelect }) => {
         subsection: activeSubsection,
         group: groupId,
       });
+    }
+
+    // Для мобильной версии закрываем каталог после выбора группы
+    if (isMobile) {
+      setIsOpen(false);
+      setMobileLevel(0);
+    }
+  };
+
+  // Обработчик кнопки "Назад" для мобильной версии
+  const handleMobileBack = () => {
+    if (mobileLevel > 0) {
+      setMobileLevel(mobileLevel - 1);
+    } else {
+      // При нажатии на крестик закрываем каталог полностью
+      setIsOpen(false);
+      setMobileLevel(0);
     }
   };
 
@@ -410,6 +573,33 @@ const Catalog = ({ onCategorySelect }) => {
     );
   };
 
+  // Получаем заголовок для текущего уровня мобильной навигации
+  const getMobileTitle = () => {
+    if (mobileLevel === 0) {
+      return "Каталог";
+    } else if (
+      mobileLevel === 1 &&
+      activeDepartment &&
+      catalogData &&
+      catalogData[activeDepartment]
+    ) {
+      return catalogData[activeDepartment].name;
+    } else if (
+      mobileLevel === 2 &&
+      activeSection &&
+      getActiveSections()[activeSection]
+    ) {
+      return getActiveSections()[activeSection].name;
+    } else if (
+      mobileLevel === 3 &&
+      activeSubsection &&
+      getActiveSubsections()[activeSubsection]
+    ) {
+      return getActiveSubsections()[activeSubsection].name;
+    }
+    return "Каталог";
+  };
+
   return (
     <CatalogContainer ref={catalogRef}>
       <CatalogButton onClick={toggleCatalog} isOpen={isOpen}>
@@ -423,70 +613,107 @@ const Catalog = ({ onCategorySelect }) => {
         ) : error ? (
           <LoadingIndicator>Ошибка: {error}</LoadingIndicator>
         ) : (
-          <CategoryContainer>
-            {/* Отделы */}
-            <DepartmentsContainer>
-              {catalogData &&
-                Object.entries(catalogData).map(
-                  ([departmentId, department]) => (
+          <>
+            {/* Мобильный заголовок */}
+            <MobileHeader>
+              <MobileBackButton onClick={handleMobileBack}>
+                {mobileLevel > 0 ? "< Назад" : null}
+              </MobileBackButton>
+              <MobileTitle>{getMobileTitle()}</MobileTitle>
+              <MobileCloseButton
+                onClick={() => {
+                  setIsOpen(false);
+                  setMobileLevel(0);
+                }}
+              >
+                <img src="/icons/icon4.svg" alt="Закрыть" />
+              </MobileCloseButton>
+            </MobileHeader>
+
+            <CategoryContainer>
+              {/* Отделы */}
+              <DepartmentsContainer mobileLevel={mobileLevel}>
+                {catalogData &&
+                  Object.entries(catalogData).map(
+                    ([departmentId, department]) => (
+                      <CategoryItem
+                        key={departmentId}
+                        active={departmentId === activeDepartment}
+                        onClick={() => handleDepartmentClick(departmentId)}
+                      >
+                        <CategoryItemContent>
+                          <CategoryCode>{departmentId}</CategoryCode>
+                          {department.name}
+                        </CategoryItemContent>
+                        <CategoryArrow>
+                          <img src="/icons/arrow-right.svg" alt="" />
+                        </CategoryArrow>
+                      </CategoryItem>
+                    )
+                  )}
+              </DepartmentsContainer>
+
+              {/* Разделы */}
+              <SectionsContainer mobileLevel={mobileLevel}>
+                {Object.entries(getActiveSections()).map(
+                  ([sectionId, section]) => (
                     <CategoryItem
-                      key={departmentId}
-                      active={departmentId === activeDepartment}
-                      onClick={() => handleDepartmentClick(departmentId)}
+                      key={sectionId}
+                      active={sectionId === activeSection}
+                      onClick={() => handleSectionClick(sectionId)}
                     >
-                      <CategoryCode>{departmentId}</CategoryCode>
-                      {department.name}
+                      <CategoryItemContent>
+                        <CategoryCode>{sectionId}</CategoryCode>
+                        {section.name}
+                      </CategoryItemContent>
+                      <CategoryArrow>
+                        <img src="/icons/arrow-right.svg" alt="" />
+                      </CategoryArrow>
                     </CategoryItem>
                   )
                 )}
-            </DepartmentsContainer>
+              </SectionsContainer>
 
-            {/* Разделы */}
-            <SectionsContainer>
-              {Object.entries(getActiveSections()).map(
-                ([sectionId, section]) => (
-                  <CategoryItem
-                    key={sectionId}
-                    active={sectionId === activeSection}
-                    onClick={() => handleSectionClick(sectionId)}
-                  >
-                    <CategoryCode>{sectionId}</CategoryCode>
-                    {section.name}
-                  </CategoryItem>
-                )
-              )}
-            </SectionsContainer>
+              {/* Подразделы */}
+              <SubsectionsContainer mobileLevel={mobileLevel}>
+                {Object.entries(getActiveSubsections()).map(
+                  ([subsectionId, subsection]) => (
+                    <CategoryItem
+                      key={subsectionId}
+                      active={subsectionId === activeSubsection}
+                      onClick={() => handleSubsectionClick(subsectionId)}
+                    >
+                      <CategoryItemContent>
+                        <CategoryCode>{subsectionId}</CategoryCode>
+                        {subsection.name}
+                      </CategoryItemContent>
+                      <CategoryArrow>
+                        <img src="/icons/arrow-right.svg" alt="" />
+                      </CategoryArrow>
+                    </CategoryItem>
+                  )
+                )}
+              </SubsectionsContainer>
 
-            {/* Подразделы */}
-            <SubsectionsContainer>
-              {Object.entries(getActiveSubsections()).map(
-                ([subsectionId, subsection]) => (
-                  <CategoryItem
-                    key={subsectionId}
-                    active={subsectionId === activeSubsection}
-                    onClick={() => handleSubsectionClick(subsectionId)}
-                  >
-                    <CategoryCode>{subsectionId}</CategoryCode>
-                    {subsection.name}
-                  </CategoryItem>
-                )
-              )}
-            </SubsectionsContainer>
-
-            {/* Группы */}
-            <GroupsContainer>
-              {Object.entries(getActiveGroups()).map(([groupId, groupName]) => (
-                <CategoryItem
-                  key={groupId}
-                  active={groupId === activeGroup}
-                  onClick={() => handleGroupClick(groupId)}
-                >
-                  <CategoryCode>{groupId}</CategoryCode>
-                  {groupName}
-                </CategoryItem>
-              ))}
-            </GroupsContainer>
-          </CategoryContainer>
+              {/* Группы */}
+              <GroupsContainer mobileLevel={mobileLevel}>
+                {Object.entries(getActiveGroups()).map(
+                  ([groupId, groupName]) => (
+                    <CategoryItem
+                      key={groupId}
+                      active={groupId === activeGroup}
+                      onClick={() => handleGroupClick(groupId)}
+                    >
+                      <CategoryItemContent>
+                        <CategoryCode>{groupId}</CategoryCode>
+                        {groupName}
+                      </CategoryItemContent>
+                    </CategoryItem>
+                  )
+                )}
+              </GroupsContainer>
+            </CategoryContainer>
+          </>
         )}
       </CatalogDropdown>
     </CatalogContainer>
@@ -506,6 +733,12 @@ GroupsContainer.displayName = "GroupsContainer";
 CategoryItem.displayName = "CategoryItem";
 CategoryCode.displayName = "CategoryCode";
 LoadingIndicator.displayName = "LoadingIndicator";
+CategoryItemContent.displayName = "CategoryItemContent";
+CategoryArrow.displayName = "CategoryArrow";
+MobileHeader.displayName = "MobileHeader";
+MobileBackButton.displayName = "MobileBackButton";
+MobileTitle.displayName = "MobileTitle";
+MobileCloseButton.displayName = "MobileCloseButton";
 Catalog.displayName = "Catalog";
 
 export default Catalog;

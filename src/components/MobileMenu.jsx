@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const MenuContainer = styled.div`
   position: fixed;
@@ -45,7 +46,7 @@ const MenuItem = styled.li`
   border-bottom: 1px solid #eee;
 `;
 
-const MenuLink = styled.a`
+const MenuLink = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -53,11 +54,20 @@ const MenuLink = styled.a`
   color: #333;
   text-decoration: none;
   font-size: 16px;
+  cursor: pointer;
 
   svg {
     width: 16px;
     height: 16px;
   }
+
+  ${(props) =>
+    props.active &&
+    `
+    background-color: #f0f7ff;
+    color: #0066cc;
+    font-weight: 500;
+  `}
 `;
 
 const SubMenuContainer = styled.div`
@@ -73,69 +83,80 @@ const SubMenuItem = styled.li`
   }
 `;
 
-const SubMenuLink = styled.a`
+const SubMenuLink = styled.div`
   display: block;
   padding: 14px 16px 14px 32px;
   color: #333;
   text-decoration: none;
   font-size: 14px;
+  cursor: pointer;
+
+  ${(props) =>
+    props.active &&
+    `
+    background-color: #e6f0ff;
+    color: #0066cc;
+    font-weight: 500;
+    border-left: 3px solid #0066cc;
+    padding-left: 29px;
+  `}
+`;
+
+const MenuIcon = styled.img`
+  width: 16px;
+  height: 16px;
+  margin-right: 12px;
+`;
+
+const Logo = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+
+  img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+
+  span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+  }
 `;
 
 const MobileMenu = ({ isOpen, onClose }) => {
-  const [openSubMenu, setOpenSubMenu] = useState(null);
+  const [openSubMenu, setOpenSubMenu] = useState(true);
+  const [activeItem, setActiveItem] = useState("Прайс листы");
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const toggleSubMenu = (id) => {
-    setOpenSubMenu(openSubMenu === id ? null : id);
+  // Обновляем активный элемент на основе текущего пути
+  useEffect(() => {
+    if (location.pathname === "/cart") {
+      setActiveItem("Корзина");
+    } else if (
+      location.pathname === "/" ||
+      location.pathname === "/price-list"
+    ) {
+      setActiveItem("Прайс листы");
+    }
+  }, [location.pathname]);
+
+  const toggleSubMenu = () => {
+    setOpenSubMenu(!openSubMenu);
   };
 
-  const menuItems = [
-    {
-      id: 1,
-      title: "Закупки материалов",
-      subItems: [
-        { id: 11, title: "Найти тендер" },
-        { id: 12, title: "Создать тендер" },
-        { id: 13, title: "Мои тендеры" },
-      ],
-    },
-    {
-      id: 2,
-      title: "Каталог",
-      subItems: [
-        { id: 21, title: "Материалы и конструкции для общестроительных работ" },
-        { id: 22, title: "Металлопрокат листовой" },
-        {
-          id: 23,
-          title: "Материалы и конструкции для отделочного цикла работ",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Мои тендеры",
-      subItems: [],
-    },
-    {
-      id: 4,
-      title: "Мои поставщики",
-      subItems: [],
-    },
-    {
-      id: 5,
-      title: "Данные по тендерам",
-      subItems: [],
-    },
-    {
-      id: 6,
-      title: "Реестр компаний",
-      subItems: [],
-    },
-    {
-      id: 7,
-      title: "Прайс листы",
-      subItems: [],
-    },
-  ];
+  const handleItemClick = (itemName, path) => {
+    setActiveItem(itemName);
+    if (path) {
+      navigate(path);
+      onClose(); // Закрываем мобильное меню после перехода
+    }
+  };
 
   return (
     <MenuContainer isOpen={isOpen}>
@@ -144,55 +165,159 @@ const MobileMenu = ({ isOpen, onClose }) => {
         <CloseButton onClick={onClose}>×</CloseButton>
       </MenuHeader>
 
+      <Logo>
+        <img
+          src="https://avatars.mds.yandex.net/i?id=1d7b2be95336c95ecf78a007f7e85d4b_l-5232642-images-thumbs&n=13"
+          alt="Лого"
+        />
+        <span>ИП Ибрагимова И. К.</span>
+      </Logo>
+
       <MenuList>
-        {menuItems.map((item) => (
-          <MenuItem key={item.id}>
-            <MenuLink
-              href="#"
-              onClick={(e) => {
-                if (item.subItems.length > 0) {
-                  e.preventDefault();
-                  toggleSubMenu(item.id);
-                }
+        <MenuItem>
+          <MenuLink
+            active={activeItem === "Создать тендер"}
+            onClick={() => handleItemClick("Создать тендер", "/create-tender")}
+          >
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <MenuIcon src="/icons/Icon1.svg" alt="иконка" />
+              Создать тендер
+            </div>
+          </MenuLink>
+        </MenuItem>
+
+        <MenuItem>
+          <MenuLink
+            active={activeItem === "Найти тендер"}
+            onClick={() => handleItemClick("Найти тендер", "/find-tender")}
+          >
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <MenuIcon src="/icons/Icon2.svg" alt="иконка" />
+              Найти тендер
+            </div>
+          </MenuLink>
+        </MenuItem>
+
+        <MenuItem>
+          <MenuLink
+            active={["Создать тендер", "Найти тендер"].includes(activeItem)}
+            onClick={toggleSubMenu}
+          >
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <MenuIcon src="/icons/Icon3.svg" alt="иконка" />
+              Закупки материалов
+            </div>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{
+                transform: openSubMenu ? "rotate(180deg)" : "rotate(0)",
+                transition: "transform 0.3s ease",
               }}
             >
-              {item.title}
-              {item.subItems.length > 0 && (
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d={
-                      openSubMenu === item.id
-                        ? "M12 10L8 6L4 10"
-                        : "M4 6L8 10L12 6"
-                    }
-                    stroke="#333"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </MenuLink>
+              <path
+                d="M4 6L8 10L12 6"
+                stroke="#333"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </MenuLink>
 
-            {item.subItems.length > 0 && (
-              <SubMenuContainer isOpen={openSubMenu === item.id}>
-                <MenuList>
-                  {item.subItems.map((subItem) => (
-                    <SubMenuItem key={subItem.id}>
-                      <SubMenuLink href="#">{subItem.title}</SubMenuLink>
-                    </SubMenuItem>
-                  ))}
-                </MenuList>
-              </SubMenuContainer>
-            )}
-          </MenuItem>
-        ))}
+          <SubMenuContainer isOpen={openSubMenu}>
+            <MenuList>
+              <SubMenuItem>
+                <SubMenuLink
+                  active={activeItem === "Создать тендер (подменю)"}
+                  onClick={() => handleItemClick("Создать тендер (подменю)")}
+                >
+                  Создать тендер
+                </SubMenuLink>
+              </SubMenuItem>
+              <SubMenuItem>
+                <SubMenuLink
+                  active={activeItem === "Найти тендер (подменю)"}
+                  onClick={() => handleItemClick("Найти тендер (подменю)")}
+                >
+                  Найти тендер
+                </SubMenuLink>
+              </SubMenuItem>
+            </MenuList>
+          </SubMenuContainer>
+        </MenuItem>
+
+        <MenuItem>
+          <MenuLink
+            active={activeItem === "Мои тендеры"}
+            onClick={() => handleItemClick("Мои тендеры")}
+          >
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <MenuIcon src="/icons/Icon4.svg" alt="иконка" />
+              Мои тендеры
+            </div>
+          </MenuLink>
+        </MenuItem>
+
+        <MenuItem>
+          <SubMenuLink
+            active={activeItem === "Закупки"}
+            onClick={() => handleItemClick("Закупки")}
+          >
+            Закупки
+          </SubMenuLink>
+        </MenuItem>
+
+        <MenuItem>
+          <SubMenuLink
+            active={activeItem === "Мои поставщики"}
+            onClick={() => handleItemClick("Мои поставщики")}
+          >
+            Мои поставщики
+          </SubMenuLink>
+        </MenuItem>
+
+        <MenuItem>
+          <SubMenuLink
+            active={activeItem === "Данные по тендерам"}
+            onClick={() => handleItemClick("Данные по тендерам")}
+          >
+            Данные по тендерам
+          </SubMenuLink>
+        </MenuItem>
+
+        <MenuItem>
+          <SubMenuLink
+            active={activeItem === "Реестр компаний"}
+            onClick={() => handleItemClick("Реестр компаний")}
+          >
+            Реестр компаний
+          </SubMenuLink>
+        </MenuItem>
+
+        <MenuItem>
+          <SubMenuLink
+            active={activeItem === "Прайс листы"}
+            onClick={() => handleItemClick("Прайс листы", "/")}
+          >
+            Прайс листы
+          </SubMenuLink>
+        </MenuItem>
+
+        <MenuItem>
+          <MenuLink
+            active={activeItem === "Избранные тендеры"}
+            onClick={() => handleItemClick("Избранные тендеры")}
+          >
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <MenuIcon src="/icons/Icon4.svg" alt="иконка" />
+              Избранные тендеры
+            </div>
+          </MenuLink>
+        </MenuItem>
       </MenuList>
     </MenuContainer>
   );
@@ -208,6 +333,8 @@ MenuLink.displayName = "MenuLink";
 SubMenuContainer.displayName = "SubMenuContainer";
 SubMenuItem.displayName = "SubMenuItem";
 SubMenuLink.displayName = "SubMenuLink";
+MenuIcon.displayName = "MenuIcon";
+Logo.displayName = "Logo";
 
 MobileMenu.displayName = "MobileMenu";
 
