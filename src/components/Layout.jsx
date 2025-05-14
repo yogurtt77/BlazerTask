@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
@@ -8,12 +9,14 @@ const LayoutContainer = styled.div`
   display: flex;
   min-height: 100vh;
 `;
+LayoutContainer.displayName = "LayoutContainer";
 
 const MainContent = styled.div`
   flex-grow: 1;
   display: flex;
   flex-direction: column;
 `;
+MainContent.displayName = "MainContent";
 
 const MobileHeader = styled.div`
   display: none;
@@ -30,6 +33,7 @@ const MobileHeader = styled.div`
     display: flex;
   }
 `;
+MobileHeader.displayName = "MobileHeader";
 
 const MobileMenuButton = styled.button`
   background: none;
@@ -43,12 +47,14 @@ const MobileMenuButton = styled.button`
   width: 40px;
   height: 40px;
 `;
+MobileMenuButton.displayName = "MobileMenuButton";
 
 const MobileTitle = styled.h1`
   font-size: 16px;
   font-weight: 500;
   margin: 0;
 `;
+MobileTitle.displayName = "MobileTitle";
 
 const MobileCartButton = styled.button`
   background: none;
@@ -62,6 +68,7 @@ const MobileCartButton = styled.button`
   height: 40px;
   position: relative;
 `;
+MobileCartButton.displayName = "MobileCartButton";
 
 const CartBadge = styled.span`
   position: absolute;
@@ -77,6 +84,7 @@ const CartBadge = styled.span`
   align-items: center;
   justify-content: center;
 `;
+CartBadge.displayName = "CartBadge";
 
 // Модифицируем существующие стили для адаптивности
 const StyledLayoutContainer = styled(LayoutContainer)`
@@ -84,28 +92,34 @@ const StyledLayoutContainer = styled(LayoutContainer)`
     flex-direction: column;
   }
 `;
+StyledLayoutContainer.displayName = "StyledLayoutContainer";
 
 const StyledSidebar = styled.div`
   @media (max-width: 768px) {
     display: none;
   }
 `;
+StyledSidebar.displayName = "StyledSidebar";
 
 const StyledMainContent = styled(MainContent)`
   @media (max-width: 768px) {
     padding-top: 0;
   }
 `;
+StyledMainContent.displayName = "StyledMainContent";
 
 const StyledDesktopHeader = styled.div`
   @media (max-width: 768px) {
     display: none;
   }
 `;
+StyledDesktopHeader.displayName = "StyledDesktopHeader";
 
-const Layout = ({ children, onCartClick }) => {
+const Layout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -122,6 +136,10 @@ const Layout = ({ children, onCartClick }) => {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleCartClick = () => {
+    navigate("/cart");
   };
 
   return (
@@ -166,7 +184,7 @@ const Layout = ({ children, onCartClick }) => {
 
           <MobileTitle>Прайс листы</MobileTitle>
 
-          <MobileCartButton onClick={onCartClick}>
+          <MobileCartButton onClick={handleCartClick}>
             <svg
               width="24"
               height="24"
@@ -201,10 +219,10 @@ const Layout = ({ children, onCartClick }) => {
         </MobileHeader>
 
         <StyledDesktopHeader>
-          <Header onCartClick={onCartClick} />
+          <Header onCartClick={handleCartClick} />
         </StyledDesktopHeader>
 
-        {children}
+        <Outlet />
       </StyledMainContent>
 
       <MobileMenu
@@ -214,5 +232,7 @@ const Layout = ({ children, onCartClick }) => {
     </StyledLayoutContainer>
   );
 };
+
+Layout.displayName = "Layout";
 
 export default Layout;

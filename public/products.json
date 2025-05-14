@@ -1,0 +1,100 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "title": "Сверла кольцевые алмазные диаметром 70 мм",
+      "image": "/images/drill1.jpg",
+      "retailPrice": 2350,
+      "wholesalePrice": 2120,
+      "suppliers": 14,
+      "department": "21",
+      "section": "21-13",
+      "subsection": "21-1316",
+      "group": "21-131605"
+    },
+    {
+      "id": 2,
+      "title": "Плиты перекрытия железобетонные",
+      "image": "/images/drill1.jpg",
+      "retailPrice": 45000,
+      "wholesalePrice": 42000,
+      "suppliers": 8,
+      "department": "21",
+      "section": "21-02",
+      "subsection": "21-0206",
+      "group": "21-020606"
+    },
+    {
+      "id": 3,
+      "title": "Металлочерепица красная",
+      "image": "/images/drill1.jpg",
+      "retailPrice": 3200,
+      "wholesalePrice": 2950,
+      "suppliers": 12,
+      "department": "21",
+      "section": "21-10",
+      "subsection": "21-1001",
+      "group": "21-100101"
+    },
+    {
+      "id": 4,
+      "title": "Керамогранит напольный 60x60",
+      "image": "/images/drill1.jpg",
+      "retailPrice": 4500,
+      "wholesalePrice": 4100,
+      "suppliers": 10,
+      "department": "22",
+      "section": "22-02",
+      "subsection": "22-0201",
+      "group": "22-020104"
+    },
+    {
+      "id": 5,
+      "title": "Фанера влагостойкая 12мм",
+      "image": "/images/drill1.jpg",
+      "retailPrice": 1850,
+      "wholesalePrice": 1650,
+      "suppliers": 15,
+      "department": "21",
+      "section": "21-07",
+      "subsection": "21-0705",
+      "group": "21-070506"
+    },
+    {
+      "id": 6,
+      "title": "Краска фасадная акриловая 10л",
+      "image": "/images/drill1.jpg",
+      "retailPrice": 5600,
+      "wholesalePrice": 5100,
+      "suppliers": 9,
+      "department": "22",
+      "section": "22-04",
+      "subsection": "22-0402",
+      "group": "22-040203"
+    },
+    {
+      "id": 7,
+      "title": "Цемент М500 50кг",
+      "image": "/images/drill1.jpg",
+      "retailPrice": 1950,
+      "wholesalePrice": 1750,
+      "suppliers": 20,
+      "department": "21",
+      "section": "21-13",
+      "subsection": "21-1301",
+      "group": "21-130101"
+    },
+    {
+      "id": 8,
+      "title": "Профиль для гипсокартона 60/27",
+      "image": "/images/drill1.jpg",
+      "retailPrice": 850,
+      "wholesalePrice": 750,
+      "suppliers": 14,
+      "department": "22",
+      "section": "22-03",
+      "subsection": "22-0302",
+      "group": "22-030201"
+    }
+  ]
+}

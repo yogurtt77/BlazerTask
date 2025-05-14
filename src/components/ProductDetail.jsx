@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import Button from "./Button";
 
 const ProductDetailContainer = styled.div`
   padding: 24px;
   flex-grow: 1;
 `;
+ProductDetailContainer.displayName = "ProductDetailContainer";
 
 const Breadcrumbs = styled.div`
   display: flex;
@@ -29,6 +29,7 @@ const Breadcrumbs = styled.div`
     height: 16px;
   }
 `;
+Breadcrumbs.displayName = "Breadcrumbs";
 
 const BackButton = styled.button`
   display: flex;
@@ -49,91 +50,131 @@ const BackButton = styled.button`
     margin-right: 8px;
   }
 `;
+BackButton.displayName = "BackButton";
 
 const Title = styled.h1`
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 42px;
+  font-weight: bold;
+  max-width: 656px;
   color: #333;
   margin-bottom: 24px;
 `;
+Title.displayName = "Title";
 
 const ProductContent = styled.div`
   display: flex;
   gap: 24px;
   margin-bottom: 24px;
 `;
+ProductContent.displayName = "ProductContent";
 
 const ProductImages = styled.div`
-  flex: 0 0 60%;
-  background-color: white;
+  /* width: 560px; */
+  flex: 0 0 65%;
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+`;
+ProductImages.displayName = "ProductImages";
+
+const ThumbnailsColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+ThumbnailsColumn.displayName = "ThumbnailsColumn";
+
+const Thumbnail = styled.div`
+  width: 176px;
+  height: 176px;
+  border: 1px solid ${(props) => (props.active ? "#0066cc" : "#e0e0e0")};
   border-radius: 8px;
   overflow: hidden;
-  padding: 24px;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: white;
+  }
+`;
+Thumbnail.displayName = "Thumbnail";
+
+const MainImage = styled.div`
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
+  border-radius: 8px;
+  overflow: hidden;
 
   img {
-    max-width: 100%;
-    max-height: 400px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
+    background-color: white;
   }
 `;
+MainImage.displayName = "MainImage";
 
 const ProductInfo = styled.div`
-  flex: 0 0 35%;
+  max-width: 272px;
+  max-height: 380px;
   background-color: white;
   border-radius: 8px;
-  padding: 24px;
+  padding: 24px 16.5px;
 `;
+ProductInfo.displayName = "ProductInfo";
 
 const ProductInfoTitle = styled.h2`
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 150%;
   color: #333;
   margin-bottom: 16px;
 `;
+ProductInfoTitle.displayName = "ProductInfoTitle";
 
 const PriceInfo = styled.div`
   margin-bottom: 16px;
 `;
+PriceInfo.displayName = "PriceInfo";
 
 const PriceRow = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   font-size: 14px;
-  color: #666;
+  color: #808185;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
 `;
+PriceRow.displayName = "PriceRow";
 
 const Price = styled.span`
   font-weight: ${(props) => (props.bold ? "600" : "400")};
 `;
-
-const SupplierInfo = styled.div`
-  margin-bottom: 16px;
-  font-size: 14px;
-  color: #666;
-  display: flex;
-  justify-content: space-between;
-`;
+Price.displayName = "Price";
 
 const ButtonsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 24px;
 `;
+ButtonsContainer.displayName = "ButtonsContainer";
 
 const TabsContainer = styled.div`
   margin-top: 24px;
 `;
+TabsContainer.displayName = "TabsContainer";
 
 const TabsHeader = styled.div`
   display: flex;
   border-bottom: 1px solid #e0e0e0;
   margin-bottom: 24px;
 `;
+TabsHeader.displayName = "TabsHeader";
 
 const Tab = styled.div`
   padding: 12px 24px;
@@ -144,10 +185,12 @@ const Tab = styled.div`
   border-bottom: ${(props) => (props.active ? "2px solid #0066cc" : "none")};
   margin-bottom: -1px;
 `;
+Tab.displayName = "Tab";
 
 const TabContent = styled.div`
   display: ${(props) => (props.active ? "block" : "none")};
 `;
+TabContent.displayName = "TabContent";
 
 const Table = styled.table`
   width: 100%;
@@ -175,13 +218,81 @@ const Table = styled.table`
     border-bottom: none;
   }
 `;
+Table.displayName = "Table";
 
-const CartButton = styled(Button)`
+const StyledButton = styled.button`
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  width: 100%;
+  cursor: pointer;
+`;
+StyledButton.displayName = "StyledButton";
+
+const PrimaryButton = styled.button`
+  padding: 12px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  width: 100%;
+  cursor: pointer;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+
+  &:hover {
+    background-color: #0055b3;
+  }
+`;
+PrimaryButton.displayName = "PrimaryButton";
+
+const SecondaryButton = styled.button`
+  padding: 12px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  width: 100%;
+  cursor: pointer;
+  background-color: white;
+  color: #333;
+  border: 2px solid #d6dce1;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+`;
+SecondaryButton.displayName = "SecondaryButton";
+
+const CartButton = styled(StyledButton)`
   width: 100%;
 `;
+CartButton.displayName = "CartButton";
 
 const ProductDetail = ({ product, onBack }) => {
   const [activeTab, setActiveTab] = useState("sellers");
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const productImages = [
+    {
+      thumbnail: "/images/CardImage.png",
+      full: "/images/CardImage.png",
+      alt: "Сверло кольцевое алмазное 1",
+    },
+    {
+      thumbnail: "/images/CardImage.png",
+      full: "/images/CardImage.png",
+      alt: "Сверло кольцевое алмазное 2",
+    },
+    {
+      thumbnail: "/images/CardImage.png",
+      full: "/images/CardImage.png",
+      alt: "Сверло кольцевое алмазное 3",
+    },
+  ];
 
   const suppliers = [
     {
@@ -291,10 +402,23 @@ const ProductDetail = ({ product, onBack }) => {
 
       <ProductContent>
         <ProductImages>
-          <img
-            src="https://via.placeholder.com/500x300/FFD700/000000?text=Сверла+кольцевые+алмазные"
-            alt="Сверла кольцевые алмазные"
-          />
+          <ThumbnailsColumn>
+            {productImages.map((image, index) => (
+              <Thumbnail
+                key={index}
+                active={activeImageIndex === index}
+                onClick={() => setActiveImageIndex(index)}
+              >
+                <img src={image.thumbnail} alt={`${image.alt} - миниатюра`} />
+              </Thumbnail>
+            ))}
+          </ThumbnailsColumn>
+          <MainImage>
+            <img
+              src={productImages[activeImageIndex].full}
+              alt={productImages[activeImageIndex].alt}
+            />
+          </MainImage>
         </ProductImages>
 
         <ProductInfo>
@@ -311,16 +435,15 @@ const ProductDetail = ({ product, onBack }) => {
               <span>Сред. опт. цена:</span>
               <Price>2 120 ₸</Price>
             </PriceRow>
+            <PriceRow>
+              <span>Поставщиков</span>
+              <Price bold>14</Price>
+            </PriceRow>
           </PriceInfo>
 
-          <SupplierInfo>
-            <span>Поставщиков</span>
-            <Price bold>14</Price>
-          </SupplierInfo>
-
           <ButtonsContainer>
-            <CartButton primary>Выбрать поставщика</CartButton>
-            <CartButton secondary>Стать поставщиком</CartButton>
+            <PrimaryButton>Выбрать поставщика</PrimaryButton>
+            <SecondaryButton>Стать поставщиком</SecondaryButton>
           </ButtonsContainer>
         </ProductInfo>
       </ProductContent>
@@ -370,7 +493,7 @@ const ProductDetail = ({ product, onBack }) => {
                   <td>{supplier.unit}</td>
                   <td>{supplier.region}</td>
                   <td>
-                    <Button primary>В корзину</Button>
+                    <PrimaryButton>В корзину</PrimaryButton>
                   </td>
                 </tr>
               ))}
@@ -422,5 +545,7 @@ const ProductDetail = ({ product, onBack }) => {
     </ProductDetailContainer>
   );
 };
+
+ProductDetail.displayName = "ProductDetail";
 
 export default ProductDetail;

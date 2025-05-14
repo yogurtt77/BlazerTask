@@ -1,6 +1,7 @@
 import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import Button from "./Button";
+import { useCart } from "../context/CartContext";
 
 const HeaderContainer = styled.div`
   display: flex;
@@ -10,52 +11,76 @@ const HeaderContainer = styled.div`
   background-color: white;
   border-bottom: 1px solid #e0e0e0;
 `;
+HeaderContainer.displayName = "HeaderContainer";
 
-const RegistryLink = styled.a`
-  font-size: 14px;
+const RegistryLink = styled(Link)`
+  font-size: 17px;
   color: #333;
   text-decoration: none;
   display: flex;
   align-items: center;
 
-  svg {
+  img {
     margin-right: 8px;
   }
 `;
+RegistryLink.displayName = "RegistryLink";
 
 const RightSection = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
 `;
+RightSection.displayName = "RightSection";
 
 const SupportLink = styled.a`
   display: flex;
   align-items: center;
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: bold;
   color: #333;
+  border-radius: 8px;
+  padding: 6px 12px;
+  border: 2px solid #d6dce1;
 
-  svg {
+  img {
     margin-right: 8px;
   }
 `;
+SupportLink.displayName = "SupportLink";
 
-const AddPriceButton = styled(Button)`
+const AddPriceButton = styled.button`
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
   background-color: #0066cc;
   color: white;
   display: flex;
   align-items: center;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
 
-  svg {
+  &:hover {
+    background-color: #0055b3;
+  }
+
+  img {
     margin-right: 8px;
   }
 `;
+AddPriceButton.displayName = "AddPriceButton";
 
 const CartButton = styled.button`
   background: none;
   border: none;
   position: relative;
   cursor: pointer;
+  border: 2px solid #d6dce1;
+  border-radius: 8px;
+  padding: 2px 2px 0;
 
   svg {
     width: 24px;
@@ -77,84 +102,41 @@ const CartButton = styled.button`
     justify-content: center;
   }
 `;
+CartButton.displayName = "CartButton";
 
-const Header = ({ onCartClick }) => {
+const Header = () => {
+  const navigate = useNavigate();
+  const { getCartItemsCount } = useCart();
+
+  const handleCartClick = () => {
+    navigate("/cart");
+  };
+
   return (
     <HeaderContainer>
-      <RegistryLink href="#">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M3 1H13C14.1046 1 15 1.89543 15 3V13C15 14.1046 14.1046 15 13 15H3C1.89543 15 1 14.1046 1 13V3C1 1.89543 1.89543 1 3 1Z"
-            stroke="#333"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M5 5H11M5 8H11M5 11H9"
-            stroke="#333"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+      <RegistryLink to="/">
+        <img src="/icons/busket.svg" width={"18"} height={"18"} alt="иконка" />
         Реестр всех компаний
       </RegistryLink>
 
       <RightSection>
         <SupportLink href="#">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15Z"
-              stroke="#333"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M8 11V8M8 5H8.01"
-              stroke="#333"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <img
+            src="/icons/Vector.svg "
+            width={"10"}
+            height={"10"}
+            alt="иконка"
+          />
           Служба поддержки
         </SupportLink>
 
         <AddPriceButton primary>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 1V15M1 8H15"
-              stroke="white"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <img src="/icons/plus.svg" width={"18"} height={"18"} alt="иконка" />
           Добавить ценовое предложение
         </AddPriceButton>
 
-        <CartButton onClick={onCartClick}>
-          <svg
+        <CartButton onClick={handleCartClick}>
+          {/* <svg
             width="24"
             height="24"
             viewBox="0 0 24 24"
@@ -182,12 +164,20 @@ const Header = ({ onCartClick }) => {
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-          </svg>
-          <span>4</span>
+          </svg> */}
+          <img
+            src="/icons/mainbusket.svg"
+            width={"26"}
+            height={"26"}
+            alt="иконка"
+          />
+          {getCartItemsCount() > 0 && <span>{getCartItemsCount()}</span>}
         </CartButton>
       </RightSection>
     </HeaderContainer>
   );
 };
+
+Header.displayName = "Header";
 
 export default Header;

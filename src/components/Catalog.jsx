@@ -14,14 +14,18 @@ const CatalogButton = styled.button`
   display: flex;
   align-items: center;
   background-color: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 10px 16px;
-  font-size: 14px;
+  border: 1px solid #d5d5d6;
+  border-radius: 8px;
+  padding: 16px;
+  gap: 160px;
+  font-size: 17px;
   cursor: pointer;
 
-  svg {
+  svg,
+  img {
     margin-left: 8px;
+    transition: transform 0.3s ease;
+    transform: ${(props) => (props.isOpen ? "rotate(180deg)" : "rotate(0)")};
   }
 
   @media (max-width: 768px) {
@@ -158,20 +162,6 @@ const CategoryItem = styled.div`
   `}
 `;
 
-const CategoryHeader = styled.div`
-  padding: 12px 16px;
-  font-weight: 500;
-  color: #333;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  background-color: white;
-  z-index: 10;
-`;
-
 const CategoryCode = styled.span`
   color: #666;
   font-size: 12px;
@@ -187,7 +177,7 @@ const LoadingIndicator = styled.div`
   color: #666;
 `;
 
-const Catalog = () => {
+const Catalog = ({ onCategorySelect }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [catalogData, setCatalogData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -196,6 +186,7 @@ const Catalog = () => {
   const [activeDepartment, setActiveDepartment] = useState(null);
   const [activeSection, setActiveSection] = useState(null);
   const [activeSubsection, setActiveSubsection] = useState(null);
+  const [activeGroup, setActiveGroup] = useState(null);
 
   const catalogRef = useRef(null);
 
@@ -273,6 +264,7 @@ const Catalog = () => {
 
   const handleDepartmentClick = (departmentId) => {
     setActiveDepartment(departmentId);
+    setActiveGroup(null);
 
     // Сбрасываем активные разделы и подразделы
     if (
@@ -298,10 +290,21 @@ const Catalog = () => {
       setActiveSection(null);
       setActiveSubsection(null);
     }
+
+    // Вызываем функцию фильтрации с выбранным отделом
+    if (onCategorySelect) {
+      onCategorySelect({
+        department: departmentId,
+        section: null,
+        subsection: null,
+        group: null,
+      });
+    }
   };
 
   const handleSectionClick = (sectionId) => {
     setActiveSection(sectionId);
+    setActiveGroup(null);
 
     // Сбрасываем активный подраздел
     if (
@@ -317,10 +320,45 @@ const Catalog = () => {
     } else {
       setActiveSubsection(null);
     }
+
+    // Вызываем функцию фильтрации с выбранным разделом
+    if (onCategorySelect) {
+      onCategorySelect({
+        department: activeDepartment,
+        section: sectionId,
+        subsection: null,
+        group: null,
+      });
+    }
   };
 
   const handleSubsectionClick = (subsectionId) => {
     setActiveSubsection(subsectionId);
+    setActiveGroup(null);
+
+    // Вызываем функцию фильтрации с выбранным подразделом
+    if (onCategorySelect) {
+      onCategorySelect({
+        department: activeDepartment,
+        section: activeSection,
+        subsection: subsectionId,
+        group: null,
+      });
+    }
+  };
+
+  const handleGroupClick = (groupId) => {
+    setActiveGroup(groupId);
+
+    // Вызываем функцию фильтрации с выбранной группой
+    if (onCategorySelect) {
+      onCategorySelect({
+        department: activeDepartment,
+        section: activeSection,
+        subsection: activeSubsection,
+        group: groupId,
+      });
+    }
   };
 
   // Получаем активные разделы
@@ -374,47 +412,12 @@ const Catalog = () => {
 
   return (
     <CatalogContainer ref={catalogRef}>
-      <CatalogButton onClick={toggleCatalog}>
+      <CatalogButton onClick={toggleCatalog} isOpen={isOpen}>
         Каталог
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M4 6L8 10L12 6"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <img src="/icons/icon4.svg" alt="" />
       </CatalogButton>
 
       <CatalogDropdown isOpen={isOpen}>
-        <CategoryHeader>
-          Каталог
-          <CloseButton onClick={() => setIsOpen(false)}>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12 4L4 12M4 4L12 12"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </CloseButton>
-        </CategoryHeader>
-
         {loading ? (
           <LoadingIndicator>Загрузка каталога...</LoadingIndicator>
         ) : error ? (
@@ -423,7 +426,6 @@ const Catalog = () => {
           <CategoryContainer>
             {/* Отделы */}
             <DepartmentsContainer>
-              <CategoryHeader>Отделы</CategoryHeader>
               {catalogData &&
                 Object.entries(catalogData).map(
                   ([departmentId, department]) => (
@@ -441,7 +443,6 @@ const Catalog = () => {
 
             {/* Разделы */}
             <SectionsContainer>
-              <CategoryHeader>Разделы</CategoryHeader>
               {Object.entries(getActiveSections()).map(
                 ([sectionId, section]) => (
                   <CategoryItem
@@ -458,7 +459,6 @@ const Catalog = () => {
 
             {/* Подразделы */}
             <SubsectionsContainer>
-              <CategoryHeader>Подразделы</CategoryHeader>
               {Object.entries(getActiveSubsections()).map(
                 ([subsectionId, subsection]) => (
                   <CategoryItem
@@ -475,9 +475,12 @@ const Catalog = () => {
 
             {/* Группы */}
             <GroupsContainer>
-              <CategoryHeader>Группы</CategoryHeader>
               {Object.entries(getActiveGroups()).map(([groupId, groupName]) => (
-                <CategoryItem key={groupId}>
+                <CategoryItem
+                  key={groupId}
+                  active={groupId === activeGroup}
+                  onClick={() => handleGroupClick(groupId)}
+                >
                   <CategoryCode>{groupId}</CategoryCode>
                   {groupName}
                 </CategoryItem>
@@ -489,5 +492,20 @@ const Catalog = () => {
     </CatalogContainer>
   );
 };
+
+// Добавляем displayName для всех стилизованных компонентов
+CatalogContainer.displayName = "CatalogContainer";
+CatalogButton.displayName = "CatalogButton";
+CloseButton.displayName = "CloseButton";
+CatalogDropdown.displayName = "CatalogDropdown";
+CategoryContainer.displayName = "CategoryContainer";
+DepartmentsContainer.displayName = "DepartmentsContainer";
+SectionsContainer.displayName = "SectionsContainer";
+SubsectionsContainer.displayName = "SubsectionsContainer";
+GroupsContainer.displayName = "GroupsContainer";
+CategoryItem.displayName = "CategoryItem";
+CategoryCode.displayName = "CategoryCode";
+LoadingIndicator.displayName = "LoadingIndicator";
+Catalog.displayName = "Catalog";
 
 export default Catalog;

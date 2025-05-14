@@ -198,4 +198,17 @@ const MobileMenu = ({ isOpen, onClose }) => {
   );
 };
 
+MenuContainer.displayName = "MenuContainer";
+MenuHeader.displayName = "MenuHeader";
+CloseButton.displayName = "CloseButton";
+MenuTitle.displayName = "MenuTitle";
+MenuList.displayName = "MenuList";
+MenuItem.displayName = "MenuItem";
+MenuLink.displayName = "MenuLink";
+SubMenuContainer.displayName = "SubMenuContainer";
+SubMenuItem.displayName = "SubMenuItem";
+SubMenuLink.displayName = "SubMenuLink";
+
+MobileMenu.displayName = "MobileMenu";
+
 export default MobileMenu;
