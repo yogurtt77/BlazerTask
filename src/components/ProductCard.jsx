@@ -140,12 +140,15 @@ const ProductCard = ({ product, onProductClick }) => {
   };
 
   return (
-    <Card onClick={handleCardClick}>
+    <Card as="article" onClick={handleCardClick}>
       <ImageContainer>
-        <img src="/images/CardImage.png" alt={product.title} />
+        <img
+          src={product.image || "/images/CardImage.png"}
+          alt={product.title}
+        />
       </ImageContainer>
 
-      <Title>{product.title}</Title>
+      <Title as="h2">{product.title}</Title>
 
       <PriceInfo>
         <PriceRow>
@@ -163,8 +166,18 @@ const ProductCard = ({ product, onProductClick }) => {
       </PriceInfo>
 
       <ButtonContainer>
-        <OrderButton onClick={handleOrderNow}>Оформить сейчас</OrderButton>
-        <CartButton onClick={handleAddToCart}>В корзину</CartButton>
+        <OrderButton
+          onClick={handleOrderNow}
+          aria-label={`Оформить заказ на ${product.title}`}
+        >
+          Оформить сейчас
+        </OrderButton>
+        <CartButton
+          onClick={handleAddToCart}
+          aria-label={`Добавить ${product.title} в корзину`}
+        >
+          В корзину
+        </CartButton>
       </ButtonContainer>
     </Card>
   );

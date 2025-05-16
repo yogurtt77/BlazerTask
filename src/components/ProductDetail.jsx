@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import styled from "styled-components";
+import ApiService from "../services/api.service";
 
 const ProductDetailContainer = styled.div`
   padding: 24px;
@@ -272,86 +274,105 @@ const CartButton = styled(StyledButton)`
 `;
 CartButton.displayName = "CartButton";
 
-const ProductDetail = ({ product, onBack }) => {
+const ProductDetail = () => {
+  const { productId } = useParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("sellers");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const productImages = [
-    {
-      thumbnail: "/images/CardImage.png",
-      full: "/images/CardImage.png",
-      alt: "Сверло кольцевое алмазное 1",
-    },
-    {
-      thumbnail: "/images/CardImage.png",
-      full: "/images/CardImage.png",
-      alt: "Сверло кольцевое алмазное 2",
-    },
-    {
-      thumbnail: "/images/CardImage.png",
-      full: "/images/CardImage.png",
-      alt: "Сверло кольцевое алмазное 3",
-    },
-  ];
+  // Загрузка данных продукта
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const foundProduct = await ApiService.getProductById(productId);
+        setProduct(foundProduct);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+        console.error("Ошибка при загрузке данных продукта:", err);
+      }
+    };
 
-  const suppliers = [
-    {
-      id: 1,
-      name: "ТОО MarLinStroy",
-      manager: "Шамин Николай",
-      retail: "2 350 ₸",
-      wholesale: "2 350 ₸",
-      unit: "Шт.",
-      region: "Алматы",
-    },
-    {
-      id: 2,
-      name: "ТОО Snab Royal",
-      manager: "Фарид Мухамеджанов",
-      retail: "2 350 ₸",
-      wholesale: "2 350 ₸",
-      unit: "Шт.",
-      region: "Нур-Султан",
-    },
-    {
-      id: 3,
-      name: "ТОО Кровля Kerabit",
-      manager: "Каттабеков Алмаз",
-      retail: "2 350 ₸",
-      wholesale: "2 350 ₸",
-      unit: "Шт.",
-      region: "Алматы",
-    },
-    {
-      id: 4,
-      name: "Almatherm",
-      manager: "Доскалиева Акерке",
-      retail: "2 350 ₸",
-      wholesale: "2 350 ₸",
-      unit: "Шт.",
-      region: "Алматы",
-    },
-    {
-      id: 5,
-      name: "ИП Адилбеков",
-      manager: "Адилбеков Аскар",
-      retail: "2 350 ₸",
-      wholesale: "2 350 ₸",
-      unit: "Шт.",
-      region: "Алматы",
-    },
-  ];
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
+
+  const handleBack = () => {
+    navigate(-1); // Возврат на предыдущую страницу
+  };
+
+  // Создаем массив изображений на основе данных продукта
+  const productImages = product
+    ? [
+        {
+          thumbnail: product.image || "/images/CardImage.png",
+          full: product.image || "/images/CardImage.png",
+          alt: `${product.title || "Товар"} - изображение 1`,
+        },
+        {
+          thumbnail: product.image || "/images/CardImage.png",
+          full: product.image || "/images/CardImage.png",
+          alt: `${product.title || "Товар"} - изображение 2`,
+        },
+        {
+          thumbnail: product.image || "/images/CardImage.png",
+          full: product.image || "/images/CardImage.png",
+          alt: `${product.title || "Товар"} - изображение 3`,
+        },
+      ]
+    : [];
+
+  // Используем данные о поставщиках из объекта product или пустой массив, если данных нет
+  const suppliers =
+    product && product.suppliersList ? product.suppliersList : [];
+
+  if (loading) {
+    return (
+      <ProductDetailContainer>
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
+          Загрузка данных...
+        </div>
+      </ProductDetailContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <ProductDetailContainer>
+        <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
+          Ошибка: {error}. Пожалуйста, обновите страницу или попробуйте позже.
+        </div>
+      </ProductDetailContainer>
+    );
+  }
+
+  if (!product) {
+    return (
+      <ProductDetailContainer>
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          Продукт не найден. <Link to="/price-list">Вернуться к списку</Link>
+        </div>
+      </ProductDetailContainer>
+    );
+  }
 
   return (
-    <ProductDetailContainer>
-      <Breadcrumbs>
-        <BackButton onClick={onBack}>
+    <ProductDetailContainer as="article">
+      <Breadcrumbs as="nav" aria-label="Хлебные крошки">
+        <BackButton onClick={handleBack} aria-label="Вернуться назад">
           <svg
             width="16"
             height="16"
             viewBox="0 0 16 16"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
           >
             <path
               d="M10 12L6 8L10 4"
@@ -363,13 +384,14 @@ const ProductDetail = ({ product, onBack }) => {
           </svg>
           Назад
         </BackButton>
-        <a href="#">Прайс листы</a>
+        <Link to="/price-list">Прайс листы</Link>
         <svg
           width="16"
           height="16"
           viewBox="0 0 16 16"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
         >
           <path
             d="M6 12L10 8L6 4"
@@ -379,13 +401,14 @@ const ProductDetail = ({ product, onBack }) => {
             strokeLinejoin="round"
           />
         </svg>
-        <a href="#">Проект листовой холодный</a>
+        <Link to="/price-list">Проект листовой холодный</Link>
         <svg
           width="16"
           height="16"
           viewBox="0 0 16 16"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
         >
           <path
             d="M6 12L10 8L6 4"
@@ -395,74 +418,98 @@ const ProductDetail = ({ product, onBack }) => {
             strokeLinejoin="round"
           />
         </svg>
-        <span>Сверла кольцевые алмазные диаметром 70 мм</span>
+        <span aria-current="page">
+          {product ? product.title : "Загрузка..."}
+        </span>
       </Breadcrumbs>
 
-      <Title>Сверла кольцевые алмазные диаметром 70 мм</Title>
+      <Title as="h1">{product ? product.title : "Загрузка..."}</Title>
 
       <ProductContent>
-        <ProductImages>
+        <ProductImages as="section" aria-label="Изображения продукта">
           <ThumbnailsColumn>
             {productImages.map((image, index) => (
               <Thumbnail
                 key={index}
                 active={activeImageIndex === index}
                 onClick={() => setActiveImageIndex(index)}
+                aria-label={`Миниатюра ${index + 1}`}
+                aria-pressed={activeImageIndex === index}
               >
                 <img src={image.thumbnail} alt={`${image.alt} - миниатюра`} />
               </Thumbnail>
             ))}
           </ThumbnailsColumn>
           <MainImage>
-            <img
-              src={productImages[activeImageIndex].full}
-              alt={productImages[activeImageIndex].alt}
-            />
+            {productImages.length > 0 ? (
+              <img
+                src={productImages[activeImageIndex].full}
+                alt={productImages[activeImageIndex].alt}
+              />
+            ) : (
+              <img src="/images/CardImage.png" alt="Изображение товара" />
+            )}
           </MainImage>
         </ProductImages>
 
-        <ProductInfo>
-          <ProductInfoTitle>
-            Сверла кольцевые алмазные диаметром 70 мм
+        <ProductInfo as="section" aria-label="Информация о продукте">
+          <ProductInfoTitle as="h2">
+            {product ? product.title : "Загрузка..."}
           </ProductInfoTitle>
 
           <PriceInfo>
             <PriceRow>
               <span>Сред. розн. цена:</span>
-              <Price bold>2 350 ₸</Price>
+              <Price bold>{product ? `${product.retailPrice} ₸` : "—"}</Price>
             </PriceRow>
             <PriceRow>
               <span>Сред. опт. цена:</span>
-              <Price>2 120 ₸</Price>
+              <Price>{product ? `${product.wholesalePrice} ₸` : "—"}</Price>
             </PriceRow>
             <PriceRow>
               <span>Поставщиков</span>
-              <Price bold>14</Price>
+              <Price bold>{product ? product.suppliers : "—"}</Price>
             </PriceRow>
           </PriceInfo>
 
           <ButtonsContainer>
-            <PrimaryButton>Выбрать поставщика</PrimaryButton>
-            <SecondaryButton>Стать поставщиком</SecondaryButton>
+            <PrimaryButton aria-label="Выбрать поставщика">
+              Выбрать поставщика
+            </PrimaryButton>
+            <SecondaryButton aria-label="Стать поставщиком">
+              Стать поставщиком
+            </SecondaryButton>
           </ButtonsContainer>
         </ProductInfo>
       </ProductContent>
 
-      <TabsContainer>
-        <TabsHeader>
+      <TabsContainer as="section" aria-label="Детальная информация">
+        <TabsHeader role="tablist">
           <Tab
+            role="tab"
+            id="tab-sellers"
+            aria-controls="panel-sellers"
+            aria-selected={activeTab === "sellers"}
             active={activeTab === "sellers"}
             onClick={() => setActiveTab("sellers")}
           >
             ПРОДАВЦЫ
           </Tab>
           <Tab
+            role="tab"
+            id="tab-specs"
+            aria-controls="panel-specs"
+            aria-selected={activeTab === "specs"}
             active={activeTab === "specs"}
             onClick={() => setActiveTab("specs")}
           >
             ХАРАКТЕРИСТИКИ
           </Tab>
           <Tab
+            role="tab"
+            id="tab-description"
+            aria-controls="panel-description"
+            aria-selected={activeTab === "description"}
             active={activeTab === "description"}
             onClick={() => setActiveTab("description")}
           >
@@ -470,17 +517,25 @@ const ProductDetail = ({ product, onBack }) => {
           </Tab>
         </TabsHeader>
 
-        <TabContent active={activeTab === "sellers"}>
+        <TabContent
+          role="tabpanel"
+          id="panel-sellers"
+          aria-labelledby="tab-sellers"
+          hidden={activeTab !== "sellers"}
+          active={activeTab === "sellers"}
+        >
           <Table>
             <thead>
               <tr>
-                <th>Поставщик</th>
-                <th>Ответственный</th>
-                <th>Розница</th>
-                <th>Оптовая</th>
-                <th>Ед.изм.</th>
-                <th>Регион</th>
-                <th></th>
+                <th scope="col">Поставщик</th>
+                <th scope="col">Ответственный</th>
+                <th scope="col">Розница</th>
+                <th scope="col">Оптовая</th>
+                <th scope="col">Ед.изм.</th>
+                <th scope="col">Регион</th>
+                <th scope="col">
+                  <span className="sr-only">Действия</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -493,7 +548,11 @@ const ProductDetail = ({ product, onBack }) => {
                   <td>{supplier.unit}</td>
                   <td>{supplier.region}</td>
                   <td>
-                    <PrimaryButton>В корзину</PrimaryButton>
+                    <PrimaryButton
+                      aria-label={`Добавить в корзину товар от поставщика ${supplier.name}`}
+                    >
+                      В корзину
+                    </PrimaryButton>
                   </td>
                 </tr>
               ))}
@@ -501,45 +560,63 @@ const ProductDetail = ({ product, onBack }) => {
           </Table>
         </TabContent>
 
-        <TabContent active={activeTab === "specs"}>
+        <TabContent
+          role="tabpanel"
+          id="panel-specs"
+          aria-labelledby="tab-specs"
+          hidden={activeTab !== "specs"}
+          active={activeTab === "specs"}
+        >
           <Table>
             <tbody>
-              <tr>
-                <td>Диаметр</td>
-                <td>70 мм</td>
-              </tr>
-              <tr>
-                <td>Тип</td>
-                <td>Алмазное</td>
-              </tr>
-              <tr>
-                <td>Материал</td>
-                <td>Сталь с алмазным напылением</td>
-              </tr>
-              <tr>
-                <td>Назначение</td>
-                <td>Для сверления отверстий в бетоне, камне, кирпиче</td>
-              </tr>
+              {product && product.specs ? (
+                Object.entries(product.specs).map(([key, value]) => (
+                  <tr key={key}>
+                    <th scope="row">
+                      {key === "diameter"
+                        ? "Диаметр"
+                        : key === "type"
+                        ? "Тип"
+                        : key === "material"
+                        ? "Материал"
+                        : key === "purpose"
+                        ? "Назначение"
+                        : key === "thickness"
+                        ? "Толщина"
+                        : key === "color"
+                        ? "Цвет"
+                        : key.charAt(0).toUpperCase() + key.slice(1)}
+                    </th>
+                    <td>{value}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="2">Характеристики не указаны</td>
+                </tr>
+              )}
             </tbody>
           </Table>
         </TabContent>
 
-        <TabContent active={activeTab === "description"}>
-          <p>
-            Сверла кольцевые алмазные диаметром 70 мм предназначены для
-            сверления отверстий в твердых материалах, таких как бетон, камень,
-            кирпич и т.д. Алмазное напыление обеспечивает высокую
-            производительность и долговечность инструмента.
-          </p>
-          <p>
-            Особенности:
-            <ul>
-              <li>Диаметр сверления: 70 мм</li>
-              <li>Высокая скорость сверления</li>
-              <li>Долгий срок службы</li>
-              <li>Подходит для профессионального использования</li>
-            </ul>
-          </p>
+        <TabContent
+          role="tabpanel"
+          id="panel-description"
+          aria-labelledby="tab-description"
+          hidden={activeTab !== "description"}
+          active={activeTab === "description"}
+        >
+          {product && product.description ? (
+            <div>
+              {product.description.split(". ").map((sentence, index) => (
+                <p key={index}>
+                  {sentence.trim() + (sentence.endsWith(".") ? "" : ".")}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p>Описание отсутствует</p>
+          )}
         </TabContent>
       </TabsContainer>
     </ProductDetailContainer>

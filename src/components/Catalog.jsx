@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
+import ApiService from "../services/api.service";
 
 const CatalogContainer = styled.div`
   position: relative;
@@ -320,11 +321,7 @@ const Catalog = ({ onCategorySelect }) => {
     const fetchCatalogData = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/data.json");
-        if (!response.ok) {
-          throw new Error("Не удалось загрузить данные каталога");
-        }
-        const data = await response.json();
+        const data = await ApiService.getCatalog();
         setCatalogData(data);
 
         // Устанавливаем первый отдел как активный по умолчанию

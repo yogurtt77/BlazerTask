@@ -145,18 +145,25 @@ const Layout = () => {
   return (
     <StyledLayoutContainer>
       <StyledSidebar>
-        <Sidebar />
+        <aside>
+          <Sidebar />
+        </aside>
       </StyledSidebar>
 
       <StyledMainContent>
-        <MobileHeader>
-          <MobileMenuButton onClick={toggleMobileMenu}>
+        <MobileHeader as="header" role="banner">
+          <MobileMenuButton
+            onClick={toggleMobileMenu}
+            aria-label="Открыть меню"
+            aria-expanded={isMobileMenuOpen}
+          >
             <svg
               width="24"
               height="24"
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
             >
               <path
                 d="M3 12H21"
@@ -182,15 +189,16 @@ const Layout = () => {
             </svg>
           </MobileMenuButton>
 
-          <MobileTitle>Прайс листы</MobileTitle>
+          <MobileTitle as="h1">Прайс листы</MobileTitle>
 
-          <MobileCartButton onClick={handleCartClick}>
+          <MobileCartButton onClick={handleCartClick} aria-label="Корзина">
             <svg
               width="24"
               height="24"
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
             >
               <path
                 d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z"
@@ -214,15 +222,17 @@ const Layout = () => {
                 strokeLinejoin="round"
               />
             </svg>
-            <CartBadge>3</CartBadge>
+            <CartBadge aria-label="3 товара в корзине">3</CartBadge>
           </MobileCartButton>
         </MobileHeader>
 
-        <StyledDesktopHeader>
+        <StyledDesktopHeader as="header" role="banner">
           <Header onCartClick={handleCartClick} />
         </StyledDesktopHeader>
 
-        <Outlet />
+        <main>
+          <Outlet />
+        </main>
       </StyledMainContent>
 
       <MobileMenu
