@@ -1,12 +1,14 @@
 // Конфигурация API
 const API_CONFIG = {
   // Базовый URL API
-  BASE_URL: "http://test.api.sadi.kz",
+  // Для разработки используем локальные JSON-файлы
+  // При переходе на реальный API, замените на URL вашего API
+  BASE_URL: process.env.REACT_APP_API_URL || "",
 
   // Флаг, указывающий, используем ли мы локальные JSON-файлы или реальный API
-  USE_LOCAL_JSON: false,
+  USE_LOCAL_JSON: process.env.REACT_APP_USE_LOCAL_JSON === "true" || true,
 
-  // Пути к локальным JSON-файлам (для резервного использования)
+  // Пути к локальным JSON-файлам
   LOCAL_JSON: {
     PRODUCTS: "/products2.json",
     CATALOG: "/data2.json",
@@ -14,9 +16,9 @@ const API_CONFIG = {
 
   // Пути к API endpoints
   ENDPOINTS: {
-    PRODUCTS: "/api/Materials",
-    PRODUCT_DETAILS: "/api/Materials/:id",
-    CATALOG: "/api/MaterialTrees",
+    PRODUCTS: "/api/products",
+    PRODUCT_DETAILS: "/api/products/:id",
+    CATALOG: "/api/catalog",
   },
 
   // Настройки запросов

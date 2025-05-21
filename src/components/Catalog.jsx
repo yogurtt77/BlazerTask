@@ -322,14 +322,14 @@ const Catalog = ({ onCategorySelect }) => {
       setLoading(true);
       try {
         const data = await ApiService.getCatalog();
+        console.log("Получены данные каталога:", data);
+
         // Преобразуем данные из новой структуры в формат, который ожидает компонент
         const transformedData = {};
 
         // Сначала найдем все отделы (элементы верхнего уровня, у которых ParId = 1)
         const departments = data.filter((item) => item.ParId === 1);
-
-        // Находим отдел 21 (МАТЕРИАЛЫ И КОНСТРУКЦИИ ДЛЯ ОБЩЕСТРОИТЕЛЬНЫХ РАБОТ)
-        const department21 = departments.find((dept) => dept.Code === "21");
+        console.log("Найдены отделы:", departments);
 
         // Создаем структуру отделов
         departments.forEach((dept) => {
@@ -392,23 +392,16 @@ const Catalog = ({ onCategorySelect }) => {
           });
         });
 
+        console.log("Преобразованные данные каталога:", transformedData);
         setCatalogData(transformedData);
 
-        // Устанавливаем отдел 21 как активный по умолчанию, если он существует
+        // Устанавливаем первый отдел как активный по умолчанию
         if (transformedData && Object.keys(transformedData).length > 0) {
-          // Находим отдел 21 в преобразованных данных
-          const department21Id = department21
-            ? department21.MaterialTreeId.toString()
-            : null;
-          const departmentId =
-            department21Id && transformedData[department21Id]
-              ? department21Id
-              : Object.keys(transformedData)[0];
-
-          setActiveDepartment(departmentId);
+          const firstDepartmentId = Object.keys(transformedData)[0];
+          setActiveDepartment(firstDepartmentId);
 
           // Устанавливаем первый раздел как активный по умолчанию
-          const firstDepartment = transformedData[departmentId];
+          const firstDepartment = transformedData[firstDepartmentId];
           if (
             firstDepartment &&
             firstDepartment.sections &&
