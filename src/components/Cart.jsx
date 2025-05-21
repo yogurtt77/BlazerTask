@@ -193,6 +193,8 @@ const Cart = () => {
   };
 
   const calculateItemTotal = (item) => {
+    // Если цена не указана, возвращаем 0
+    if (!item.retailPrice) return 0;
     return item.retailPrice * item.quantity;
   };
 
@@ -296,10 +298,31 @@ const Cart = () => {
               {cartItems.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <ProductName>{item.title}</ProductName>
+                    <ProductName>
+                      <img
+                        src={item.image || "/images/CardImage.png"}
+                        alt={item.title}
+                        style={{
+                          width: "50px",
+                          height: "50px",
+                          objectFit: "contain",
+                        }}
+                      />
+                      <span>{item.title}</span>
+                    </ProductName>
                   </td>
-                  <td>{item.retailPrice.toLocaleString()} ₸</td>
-                  <td>{item.wholesalePrice.toLocaleString()} ₸</td>
+                  <td>
+                    {item.retailPrice
+                      ? item.retailPrice.toLocaleString()
+                      : "По запросу"}{" "}
+                    ₸
+                  </td>
+                  <td>
+                    {item.wholesalePrice
+                      ? item.wholesalePrice.toLocaleString()
+                      : "По запросу"}{" "}
+                    ₸
+                  </td>
                   <td>
                     <QuantityInput
                       type="number"
@@ -311,7 +334,12 @@ const Cart = () => {
                       placeholder="Укажите кол.во"
                     />
                   </td>
-                  <td>{calculateItemTotal(item).toLocaleString()} ₸</td>
+                  <td>
+                    {item.retailPrice
+                      ? calculateItemTotal(item).toLocaleString()
+                      : "По запросу"}{" "}
+                    ₸
+                  </td>
                   <td>
                     <RemoveButton onClick={() => handleRemoveItem(item.id)}>
                       <svg
@@ -351,7 +379,7 @@ const Cart = () => {
               fontSize: "18px",
             }}
           >
-            Итого: {getCartTotal().toLocaleString()} ₸
+            Итого: {getCartTotal() > 0 ? getCartTotal().toLocaleString() : 0} ₸
           </div>
 
           <ButtonsContainer>

@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import SearchBar from "./SearchBar";
 import ProductCard from "./ProductCard";
-import ApiService from "../services/api.service";
+import {
+  useProducts,
+  useFilteredProducts,
+  useSearchProducts,
+} from "../hooks/useApi";
 
 const PriceListContainer = styled.div`
   padding: 24px;
@@ -107,114 +111,77 @@ const FilterTag = styled.div`
 `;
 FilterTag.displayName = "FilterTag";
 
+const InfoText = styled.p`
+  text-align: center;
+  margin-top: 20px;
+  color: #666;
+  font-size: 14px;
+`;
+InfoText.displayName = "InfoText";
+
 const PriceList = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Максимальное количество карточек на главном экране без фильтрации
+  const MAX_CARDS_ON_MAIN = 20;
 
-  // Загрузка данных из API
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
+  // Получаем все продукты с использованием React Query
+  const {
+    data: allProducts = [],
+    isLoading: isLoadingProducts,
+    error: productsError,
+  } = useProducts();
 
-        // Получаем продукты (по умолчанию уже фильтрованные по отделу 21)
-        const data = await ApiService.getProducts();
-        setProducts(data);
-        setFilteredProducts(data);
+  // Получаем отфильтрованные продукты по категории с использованием React Query
+  const {
+    data: categoryFilteredProducts = [],
+    isLoading: isLoadingFiltered,
+    error: filteredError,
+  } = useFilteredProducts(selectedCategory, {
+    // Не выполнять запрос, если выполняется поиск
+    enabled: !!selectedCategory && !searchQuery,
+  });
 
-        // Получаем данные каталога для установки выбранной категории
-        const catalogData = await ApiService.getCatalog();
-        const department21 = catalogData.find((item) => item.Code === "21");
+  // Получаем результаты поиска с использованием React Query
+  const {
+    data: searchResults = [],
+    isLoading: isLoadingSearch,
+    error: searchError,
+  } = useSearchProducts(searchQuery, {
+    // Не выполнять запрос, если выбрана категория
+    enabled: !!searchQuery && !selectedCategory,
+  });
 
-        if (department21) {
-          console.log("Найден отдел 21:", department21);
-          // Устанавливаем отдел 21 как выбранную категорию по умолчанию
-          const category = {
-            department: department21.MaterialTreeId.toString(),
-            section: null,
-            subsection: null,
-            group: null,
-          };
-          setSelectedCategory(category);
-        }
+  // Определяем, какие данные отображать
+  const productsToDisplay = searchQuery
+    ? searchResults
+    : selectedCategory
+    ? categoryFilteredProducts
+    : allProducts;
 
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-        console.error("Ошибка при загрузке данных:", err);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  // Сбрасываем фильтры при монтировании компонента
-  useEffect(() => {
-    // Функционал фильтрации теперь реализован в обработчиках событий
-    // через вызовы API
-  }, []);
+  // Общее состояние загрузки и ошибок
+  const isLoading = isLoadingProducts || isLoadingFiltered || isLoadingSearch;
+  const error = productsError || filteredError || searchError;
 
   const handleProductClick = (product) => {
     navigate(`/product/${product.MaterialId}`);
   };
 
-  const handleCategorySelect = async (category) => {
+  const handleCategorySelect = (category) => {
     setSelectedCategory(category);
-    // Закрываем каталог после выбора категории
-
-    try {
-      setLoading(true);
-      const filteredData = await ApiService.filterProductsByCategory(category);
-      setFilteredProducts(filteredData);
-      setLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-      console.error("Ошибка при фильтрации данных:", err);
-    }
+    // Сбрасываем поисковый запрос при выборе категории
+    setSearchQuery("");
   };
 
-  const handleClearFilter = async () => {
+  const handleClearFilter = () => {
     setSelectedCategory(null);
-
-    try {
-      setLoading(true);
-      // Если есть поисковый запрос, применяем только его
-      if (searchQuery) {
-        const searchResults = await ApiService.searchProducts(searchQuery);
-        setFilteredProducts(searchResults);
-      } else {
-        // Иначе загружаем все продукты
-        const allProducts = await ApiService.getProducts();
-        setFilteredProducts(allProducts);
-      }
-      setLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-      console.error("Ошибка при сбросе фильтра:", err);
-    }
   };
 
-  const handleSearch = async (query) => {
+  const handleSearch = (query) => {
     setSearchQuery(query);
-
-    try {
-      setLoading(true);
-      const searchResults = await ApiService.searchProducts(query);
-      setFilteredProducts(searchResults);
-      setLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-      console.error("Ошибка при поиске:", err);
-    }
+    // Сбрасываем категорию при поиске
+    setSelectedCategory(null);
   };
 
   return (
@@ -230,7 +197,7 @@ const PriceList = () => {
         , это бесплатно.
       </Description>
 
-      {loading && (
+      {isLoading && (
         <div
           role="status"
           aria-live="polite"
@@ -245,7 +212,8 @@ const PriceList = () => {
           role="alert"
           style={{ textAlign: "center", padding: "20px", color: "red" }}
         >
-          Ошибка: {error}. Пожалуйста, обновите страницу или попробуйте позже.
+          Ошибка: {error.message || "Произошла ошибка"}. Пожалуйста, обновите
+          страницу или попробуйте позже.
         </div>
       )}
 
@@ -283,14 +251,27 @@ const PriceList = () => {
         </ActiveFilters>
       )}
 
+      {/* Отладочная информация о выбранной категории */}
+      {selectedCategory && (
+        <div style={{ marginBottom: "10px", fontSize: "12px", color: "#666" }}>
+          Выбрана категория:
+          {selectedCategory.department &&
+            ` Отдел: ${selectedCategory.department}`}
+          {selectedCategory.section && ` > Раздел: ${selectedCategory.section}`}
+          {selectedCategory.subsection &&
+            ` > Подраздел: ${selectedCategory.subsection}`}
+          {selectedCategory.group && ` > Группа: ${selectedCategory.group}`}
+        </div>
+      )}
+
       <SearchBar
         onCategorySelect={handleCategorySelect}
         onSearch={handleSearch}
       />
 
-      {!loading && !error && (
+      {!isLoading && !error && (
         <>
-          {filteredProducts.length === 0 ? (
+          {productsToDisplay.length === 0 ? (
             <div
               role="status"
               aria-live="polite"
@@ -299,16 +280,32 @@ const PriceList = () => {
               По выбранным критериям товары не найдены
             </div>
           ) : (
-            <ProductGrid as="ul" aria-label="Список товаров">
-              {filteredProducts.map((product) => (
-                <li key={product.MaterialId} style={{ listStyle: "none" }}>
-                  <ProductCard
-                    product={product}
-                    onProductClick={handleProductClick}
-                  />
-                </li>
-              ))}
-            </ProductGrid>
+            <>
+              <ProductGrid as="ul" aria-label="Список товаров">
+                {/* Если применена фильтрация или поиск, показываем все карточки, иначе ограничиваем до MAX_CARDS_ON_MAIN */}
+                {(selectedCategory || searchQuery
+                  ? productsToDisplay
+                  : productsToDisplay.slice(0, MAX_CARDS_ON_MAIN)
+                ).map((product) => (
+                  <li key={product.MaterialId} style={{ listStyle: "none" }}>
+                    <ProductCard
+                      product={product}
+                      onProductClick={handleProductClick}
+                    />
+                  </li>
+                ))}
+              </ProductGrid>
+
+              {/* Показываем информацию только если нет фильтрации и поиска, и есть больше товаров, чем показано */}
+              {!selectedCategory &&
+                !searchQuery &&
+                productsToDisplay.length > MAX_CARDS_ON_MAIN && (
+                  <InfoText>
+                    Показано {MAX_CARDS_ON_MAIN} из {productsToDisplay.length}{" "}
+                    товаров
+                  </InfoText>
+                )}
+            </>
           )}
         </>
       )}

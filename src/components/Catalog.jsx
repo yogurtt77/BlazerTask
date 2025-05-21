@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import ApiService from "../services/api.service";
+import { useCatalog } from "../hooks/useApi";
 
 const CatalogContainer = styled.div`
   position: relative;
@@ -287,10 +287,6 @@ const MobileCloseButton = styled.button`
 
 const Catalog = ({ onCategorySelect }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [catalogData, setCatalogData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
   const [activeDepartment, setActiveDepartment] = useState(null);
   const [activeSection, setActiveSection] = useState(null);
   const [activeSubsection, setActiveSubsection] = useState(null);
@@ -301,6 +297,78 @@ const Catalog = ({ onCategorySelect }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   const catalogRef = useRef(null);
+
+  // Используем React Query для получения данных каталога
+  const {
+    data: rawCatalogData = [],
+    isLoading,
+    error,
+  } = useCatalog({
+    // Включаем запрос только когда каталог открыт
+    enabled: isOpen,
+  });
+
+  // Преобразуем данные каталога в нужный формат
+  const catalogData = React.useMemo(() => {
+    if (!rawCatalogData || rawCatalogData.length === 0) return null;
+
+    const transformedData = {};
+
+    // Сначала найдем все отделы (элементы верхнего уровня, у которых ParId = 1)
+    const departments = rawCatalogData.filter((item) => item.ParId === 1);
+
+    // Создаем структуру отделов
+    departments.forEach((dept) => {
+      const id = dept.MaterialTreeId.toString();
+      transformedData[id] = {
+        name: dept.MaterialTreeName,
+        sections: {},
+      };
+
+      // Находим разделы для этого отдела
+      const sections = rawCatalogData.filter(
+        (item) => item.ParId === dept.MaterialTreeId
+      );
+
+      // Добавляем разделы
+      sections.forEach((section) => {
+        const sectionId = section.MaterialTreeId.toString();
+        transformedData[id].sections[sectionId] = {
+          name: section.MaterialTreeName,
+          subsections: {},
+        };
+
+        // Находим подразделы для этого раздела
+        const subsections = rawCatalogData.filter(
+          (item) => item.ParId === section.MaterialTreeId
+        );
+
+        // Добавляем подразделы
+        subsections.forEach((subsection) => {
+          const subsectionId = subsection.MaterialTreeId.toString();
+          transformedData[id].sections[sectionId].subsections[subsectionId] = {
+            name: subsection.MaterialTreeName,
+            groups: {},
+          };
+
+          // Находим группы для этого подраздела
+          const groups = rawCatalogData.filter(
+            (item) => item.ParId === subsection.MaterialTreeId
+          );
+
+          // Добавляем группы
+          groups.forEach((group) => {
+            const groupId = group.MaterialTreeId.toString();
+            transformedData[id].sections[sectionId].subsections[
+              subsectionId
+            ].groups[groupId] = group.MaterialTreeName;
+          });
+        });
+      });
+    });
+
+    return transformedData;
+  }, [rawCatalogData]);
 
   // Определяем, является ли устройство мобильным
   useEffect(() => {
@@ -315,134 +383,6 @@ const Catalog = ({ onCategorySelect }) => {
       window.removeEventListener("resize", checkMobile);
     };
   }, []);
-
-  // Загрузка данных каталога
-  useEffect(() => {
-    const fetchCatalogData = async () => {
-      setLoading(true);
-      try {
-        const data = await ApiService.getCatalog();
-        // Преобразуем данные из новой структуры в формат, который ожидает компонент
-        const transformedData = {};
-
-        // Сначала найдем все отделы (элементы верхнего уровня, у которых ParId = 1)
-        const departments = data.filter((item) => item.ParId === 1);
-
-        // Находим отдел 21 (МАТЕРИАЛЫ И КОНСТРУКЦИИ ДЛЯ ОБЩЕСТРОИТЕЛЬНЫХ РАБОТ)
-        const department21 = departments.find((dept) => dept.Code === "21");
-
-        // Создаем структуру отделов
-        departments.forEach((dept) => {
-          const id = dept.MaterialTreeId.toString();
-          transformedData[id] = {
-            name: dept.MaterialTreeName,
-            sections: {},
-          };
-
-          // Находим разделы для этого отдела
-          const sections = data.filter(
-            (item) => item.ParId === dept.MaterialTreeId
-          );
-          console.log(`Найдены разделы для отдела ${dept.Code}:`, sections);
-
-          // Добавляем разделы
-          sections.forEach((section) => {
-            const sectionId = section.MaterialTreeId.toString();
-            transformedData[id].sections[sectionId] = {
-              name: section.MaterialTreeName,
-              subsections: {},
-            };
-
-            // Находим подразделы для этого раздела
-            const subsections = data.filter(
-              (item) => item.ParId === section.MaterialTreeId
-            );
-            console.log(
-              `Найдены подразделы для раздела ${section.Code}:`,
-              subsections
-            );
-
-            // Добавляем подразделы
-            subsections.forEach((subsection) => {
-              const subsectionId = subsection.MaterialTreeId.toString();
-              transformedData[id].sections[sectionId].subsections[
-                subsectionId
-              ] = {
-                name: subsection.MaterialTreeName,
-                groups: {},
-              };
-
-              // Находим группы для этого подраздела
-              const groups = data.filter(
-                (item) => item.ParId === subsection.MaterialTreeId
-              );
-              console.log(
-                `Найдены группы для подраздела ${subsection.Code}:`,
-                groups
-              );
-
-              // Добавляем группы
-              groups.forEach((group) => {
-                const groupId = group.MaterialTreeId.toString();
-                transformedData[id].sections[sectionId].subsections[
-                  subsectionId
-                ].groups[groupId] = group.MaterialTreeName;
-              });
-            });
-          });
-        });
-
-        setCatalogData(transformedData);
-
-        // Устанавливаем отдел 21 как активный по умолчанию, если он существует
-        if (transformedData && Object.keys(transformedData).length > 0) {
-          // Находим отдел 21 в преобразованных данных
-          const department21Id = department21
-            ? department21.MaterialTreeId.toString()
-            : null;
-          const departmentId =
-            department21Id && transformedData[department21Id]
-              ? department21Id
-              : Object.keys(transformedData)[0];
-
-          setActiveDepartment(departmentId);
-
-          // Устанавливаем первый раздел как активный по умолчанию
-          const firstDepartment = transformedData[departmentId];
-          if (
-            firstDepartment &&
-            firstDepartment.sections &&
-            Object.keys(firstDepartment.sections).length > 0
-          ) {
-            const firstSectionId = Object.keys(firstDepartment.sections)[0];
-            setActiveSection(firstSectionId);
-
-            // Устанавливаем первый подраздел как активный по умолчанию
-            const firstSection = firstDepartment.sections[firstSectionId];
-            if (
-              firstSection &&
-              firstSection.subsections &&
-              Object.keys(firstSection.subsections).length > 0
-            ) {
-              const firstSubsectionId = Object.keys(
-                firstSection.subsections
-              )[0];
-              setActiveSubsection(firstSubsectionId);
-            }
-          }
-        }
-      } catch (err) {
-        setError(err.message);
-        console.error("Ошибка при загрузке данных каталога:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (isOpen && !catalogData) {
-      fetchCatalogData();
-    }
-  }, [isOpen, catalogData]);
 
   // Закрываем каталог при клике вне его
   useEffect(() => {
@@ -497,7 +437,7 @@ const Catalog = ({ onCategorySelect }) => {
       setActiveSubsection(null);
     }
 
-    // Вызываем функцию фильтрации с выбранным отделом
+    // Вызываем функцию фильтрации ТОЛЬКО с выбранным отделом
     if (onCategorySelect) {
       onCategorySelect({
         department: departmentId,
@@ -532,7 +472,7 @@ const Catalog = ({ onCategorySelect }) => {
       setActiveSubsection(null);
     }
 
-    // Вызываем функцию фильтрации с выбранным разделом
+    // Вызываем функцию фильтрации ТОЛЬКО с выбранным отделом и разделом
     if (onCategorySelect) {
       onCategorySelect({
         department: activeDepartment,
@@ -552,7 +492,29 @@ const Catalog = ({ onCategorySelect }) => {
     setActiveSubsection(subsectionId);
     setActiveGroup(null);
 
-    // Вызываем функцию фильтрации с выбранным подразделом
+    // Получаем первую группу для этого подраздела, если она есть
+    if (
+      catalogData &&
+      catalogData[activeDepartment] &&
+      catalogData[activeDepartment].sections[activeSection] &&
+      catalogData[activeDepartment].sections[activeSection].subsections[
+        subsectionId
+      ] &&
+      catalogData[activeDepartment].sections[activeSection].subsections[
+        subsectionId
+      ].groups
+    ) {
+      const groups =
+        catalogData[activeDepartment].sections[activeSection].subsections[
+          subsectionId
+        ].groups;
+      if (Object.keys(groups).length > 0) {
+        const firstGroupId = Object.keys(groups)[0];
+        setActiveGroup(firstGroupId);
+      }
+    }
+
+    // Вызываем функцию фильтрации ТОЛЬКО с выбранным отделом, разделом и подразделом
     if (onCategorySelect) {
       onCategorySelect({
         department: activeDepartment,
@@ -571,7 +533,7 @@ const Catalog = ({ onCategorySelect }) => {
   const handleGroupClick = (groupId) => {
     setActiveGroup(groupId);
 
-    // Вызываем функцию фильтрации с выбранной группой
+    // Вызываем функцию фильтрации с полной иерархией до группы
     if (onCategorySelect) {
       onCategorySelect({
         department: activeDepartment,
@@ -683,10 +645,12 @@ const Catalog = ({ onCategorySelect }) => {
       </CatalogButton>
 
       <CatalogDropdown isOpen={isOpen}>
-        {loading ? (
+        {isLoading ? (
           <LoadingIndicator>Загрузка каталога...</LoadingIndicator>
         ) : error ? (
-          <LoadingIndicator>Ошибка: {error}</LoadingIndicator>
+          <LoadingIndicator>
+            Ошибка: {error.message || "Произошла ошибка"}
+          </LoadingIndicator>
         ) : (
           <>
             {/* Мобильный заголовок */}

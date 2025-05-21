@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import Layout from "./components/Layout";
 import PriceList from "./components/PriceList";
 import ProductDetail from "./components/ProductDetail";
@@ -20,6 +21,8 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
+        {/* Добавляем DevTools для React Query (только в режиме разработки) */}
+        <ReactQueryDevtools initialIsOpen={false} position="bottom-right" />
       </BrowserRouter>
     </CartProvider>
   );

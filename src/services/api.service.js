@@ -4,8 +4,6 @@ import API_CONFIG from "../config/api";
 const cache = {
   catalog: null,
   products: null,
-  department21: null,
-  department21Products: null,
   categoryProducts: {},
 };
 
@@ -63,60 +61,20 @@ const ApiService = {
       return fetchApi(API_CONFIG.LOCAL_JSON.PRODUCTS);
     }
 
-    // Если у нас уже есть кэшированные продукты отдела 21, возвращаем их
-    if (cache.department21Products) {
-      return cache.department21Products;
+    // Если у нас уже есть кэшированные продукты, возвращаем их
+    if (cache.products) {
+      return cache.products;
     }
 
-    // По умолчанию фильтруем по отделу 21 (МАТЕРИАЛЫ И КОНСТРУКЦИИ ДЛЯ ОБЩЕСТРОИТЕЛЬНЫХ РАБОТ)
     try {
-      // Получаем данные каталога
-      const catalogData = await ApiService.getCatalog();
-
-      // Находим отдел 21
-      const department21 = catalogData.find((item) => item.Code === "21");
-
-      if (!department21) {
-        console.error("Отдел 21 не найден в каталоге");
-        // Если отдел 21 не найден, возвращаем все продукты
-        const products = await fetchApi(
-          `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PRODUCTS}`,
-          {},
-          "products"
-        );
-        return products;
-      }
-
-      // Сохраняем отдел 21 в кэш
-      cache.department21 = department21;
-
-      // Создаем ключ для кэша категории
-      const categoryKey = `department_${department21.MaterialTreeId}`;
-
-      // Проверяем, есть ли уже отфильтрованные продукты в кэше
-      if (cache.categoryProducts[categoryKey]) {
-        return cache.categoryProducts[categoryKey];
-      }
-
-      // Получаем все продукты
+      // Получаем все продукты без фильтрации
       const products = await fetchApi(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PRODUCTS}`,
         {},
         "products"
       );
 
-      // Фильтруем продукты по отделу 21 и его подкатегориям
-      const filteredProducts = ApiService._filterProductsByCategory(
-        products,
-        catalogData,
-        { department: department21.MaterialTreeId.toString() }
-      );
-
-      // Сохраняем отфильтрованные продукты в кэш
-      cache.department21Products = filteredProducts;
-      cache.categoryProducts[categoryKey] = filteredProducts;
-
-      return filteredProducts;
+      return products;
     } catch (error) {
       console.error("Ошибка при получении продуктов:", error);
       throw error;
@@ -287,8 +245,15 @@ const ApiService = {
       // Если выбрана группа, добавляем только её
       const groupId = parseInt(category.group);
       relatedCategories.push(groupId);
+
+      // Добавляем все продукты, которые относятся к этой группе
+      // Продукты имеют ParId равный ID группы
+      const products = catalogData.filter((item) => item.ParId === groupId);
+      products.forEach((product) => {
+        relatedCategories.push(product.MaterialTreeId);
+      });
     } else if (category.subsection) {
-      // Если выбран подраздел, добавляем его и все его группы
+      // Если выбран подраздел, добавляем его
       const subsectionId = parseInt(category.subsection);
       relatedCategories.push(subsectionId);
 
@@ -296,9 +261,17 @@ const ApiService = {
       const groups = catalogData.filter((item) => item.ParId === subsectionId);
       groups.forEach((group) => {
         relatedCategories.push(group.MaterialTreeId);
+
+        // Добавляем все продукты, которые относятся к этим группам
+        const products = catalogData.filter(
+          (item) => item.ParId === group.MaterialTreeId
+        );
+        products.forEach((product) => {
+          relatedCategories.push(product.MaterialTreeId);
+        });
       });
     } else if (category.section) {
-      // Если выбран раздел, добавляем его, все его подразделы и группы
+      // Если выбран раздел, добавляем его
       const sectionId = parseInt(category.section);
       relatedCategories.push(sectionId);
 
@@ -315,10 +288,18 @@ const ApiService = {
         );
         groups.forEach((group) => {
           relatedCategories.push(group.MaterialTreeId);
+
+          // Добавляем все продукты, которые относятся к этим группам
+          const products = catalogData.filter(
+            (item) => item.ParId === group.MaterialTreeId
+          );
+          products.forEach((product) => {
+            relatedCategories.push(product.MaterialTreeId);
+          });
         });
       });
     } else if (category.department) {
-      // Если выбран отдел, добавляем его, все его разделы, подразделы и группы
+      // Если выбран отдел, добавляем его
       const departmentId = parseInt(category.department);
       relatedCategories.push(departmentId);
 
@@ -342,6 +323,14 @@ const ApiService = {
           );
           groups.forEach((group) => {
             relatedCategories.push(group.MaterialTreeId);
+
+            // Добавляем все продукты, которые относятся к этим группам
+            const products = catalogData.filter(
+              (item) => item.ParId === group.MaterialTreeId
+            );
+            products.forEach((product) => {
+              relatedCategories.push(product.MaterialTreeId);
+            });
           });
         });
       });

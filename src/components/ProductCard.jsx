@@ -127,14 +127,38 @@ const ProductCard = ({ product, onProductClick }) => {
   const handleAddToCart = (e) => {
     // Предотвращаем всплытие события клика, чтобы не срабатывал клик по карточке
     e.stopPropagation();
-    addToCart(product);
+
+    // Создаем объект товара с правильными именами свойств для корзины
+    const cartItem = {
+      id: product.MaterialId,
+      title: product.MaterialName,
+      retailPrice: product.RetailPrice ? parseFloat(product.RetailPrice) : null,
+      wholesalePrice: product.WholesalePrice
+        ? parseFloat(product.WholesalePrice)
+        : null,
+      image: product.ImageUrl || "/images/CardImage.png",
+    };
+
+    addToCart(cartItem);
   };
 
   const handleOrderNow = (e) => {
     // Предотвращаем всплытие события клика
     e.stopPropagation();
+
+    // Создаем объект товара с правильными именами свойств для корзины
+    const cartItem = {
+      id: product.MaterialId,
+      title: product.MaterialName,
+      retailPrice: product.RetailPrice ? parseFloat(product.RetailPrice) : null,
+      wholesalePrice: product.WholesalePrice
+        ? parseFloat(product.WholesalePrice)
+        : null,
+      image: product.ImageUrl || "/images/CardImage.png",
+    };
+
     // Добавляем товар в корзину и можно перенаправить на страницу оформления заказа
-    addToCart(product);
+    addToCart(cartItem);
     // Перенаправление на страницу корзины можно реализовать с помощью useNavigate из react-router-dom
     window.location.href = "/cart";
   };

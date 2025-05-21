@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import styled from "styled-components";
-import ApiService from "../services/api.service";
+import { useProductDetails } from "../hooks/useApi";
+import { useCart } from "../context/CartContext";
 
 const ProductDetailContainer = styled.div`
   padding: 24px;
@@ -279,32 +280,36 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("sellers");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { addToCart } = useCart();
 
-  // Загрузка данных продукта
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        const foundProduct = await ApiService.getProductById(productId);
-        setProduct(foundProduct);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-        console.error("Ошибка при загрузке данных продукта:", err);
-      }
-    };
-
-    if (productId) {
-      fetchProduct();
-    }
-  }, [productId]);
+  // Используем React Query для получения данных о продукте
+  const { data: product, isLoading, error } = useProductDetails(productId);
 
   const handleBack = () => {
     navigate(-1); // Возврат на предыдущую страницу
+  };
+
+  // Функция для добавления товара в корзину
+  const handleAddToCart = (supplier) => {
+    // Создаем объект товара с правильными именами свойств для корзины
+    const cartItem = {
+      id: product.MaterialId + "-" + supplier.SupplierId, // Уникальный ID для товара от конкретного поставщика
+      title: `${product.MaterialName} (${supplier.SupplierName})`,
+      retailPrice: supplier.RetailPrice
+        ? parseFloat(supplier.RetailPrice)
+        : null,
+      wholesalePrice: supplier.WholesalePrice
+        ? parseFloat(supplier.WholesalePrice)
+        : null,
+      image: product.ImageUrl || "/images/CardImage.png",
+      supplierId: supplier.SupplierId,
+      supplierName: supplier.SupplierName,
+    };
+
+    addToCart(cartItem);
+
+    // Показываем уведомление пользователю
+    alert("Товар добавлен в корзину");
   };
 
   // Создаем массив изображений на основе данных продукта
@@ -331,7 +336,7 @@ const ProductDetail = () => {
   // Используем данные о поставщиках из объекта product или пустой массив, если данных нет
   const suppliers = product && product.Suppliers ? product.Suppliers : [];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <ProductDetailContainer>
         <div style={{ textAlign: "center", padding: "40px 0" }}>
@@ -345,7 +350,8 @@ const ProductDetail = () => {
     return (
       <ProductDetailContainer>
         <div style={{ textAlign: "center", padding: "20px", color: "red" }}>
-          Ошибка: {error}. Пожалуйста, обновите страницу или попробуйте позже.
+          Ошибка: {error.message || "Произошла ошибка"}. Пожалуйста, обновите
+          страницу или попробуйте позже.
         </div>
       </ProductDetailContainer>
     );
@@ -553,6 +559,7 @@ const ProductDetail = () => {
                   <td>
                     <PrimaryButton
                       aria-label={`Добавить в корзину товар от поставщика ${supplier.SupplierName}`}
+                      onClick={() => handleAddToCart(supplier)}
                     >
                       В корзину
                     </PrimaryButton>

@@ -4,6 +4,8 @@
   "private": true,
   "homepage": ".",
   "dependencies": {
+    "@tanstack/react-query": "^5.76.1",
+    "@tanstack/react-query-devtools": "^5.76.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -13,6 +15,9 @@
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0",
     "react-scripts": "5.0.1",
+    "react-virtualized-auto-sizer": "^1.0.26",
+    "react-window": "^1.8.11",
+    "react-window-infinite-loader": "^1.0.10",
     "styled-components": "^6.1.17",
     "web-vitals": "^2.1.4"
   },
