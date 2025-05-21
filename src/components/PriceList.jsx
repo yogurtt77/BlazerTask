@@ -121,9 +121,28 @@ const PriceList = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+
+        // Получаем продукты (по умолчанию уже фильтрованные по отделу 21)
         const data = await ApiService.getProducts();
         setProducts(data);
         setFilteredProducts(data);
+
+        // Получаем данные каталога для установки выбранной категории
+        const catalogData = await ApiService.getCatalog();
+        const department21 = catalogData.find((item) => item.Code === "21");
+
+        if (department21) {
+          console.log("Найден отдел 21:", department21);
+          // Устанавливаем отдел 21 как выбранную категорию по умолчанию
+          const category = {
+            department: department21.MaterialTreeId.toString(),
+            section: null,
+            subsection: null,
+            group: null,
+          };
+          setSelectedCategory(category);
+        }
+
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -142,7 +161,7 @@ const PriceList = () => {
   }, []);
 
   const handleProductClick = (product) => {
-    navigate(`/product/${product.id}`);
+    navigate(`/product/${product.MaterialId}`);
   };
 
   const handleCategorySelect = async (category) => {
@@ -282,7 +301,7 @@ const PriceList = () => {
           ) : (
             <ProductGrid as="ul" aria-label="Список товаров">
               {filteredProducts.map((product) => (
-                <li key={product.id} style={{ listStyle: "none" }}>
+                <li key={product.MaterialId} style={{ listStyle: "none" }}>
                   <ProductCard
                     product={product}
                     onProductClick={handleProductClick}

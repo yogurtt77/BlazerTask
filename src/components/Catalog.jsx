@@ -322,15 +322,93 @@ const Catalog = ({ onCategorySelect }) => {
       setLoading(true);
       try {
         const data = await ApiService.getCatalog();
-        setCatalogData(data);
+        // Преобразуем данные из новой структуры в формат, который ожидает компонент
+        const transformedData = {};
 
-        // Устанавливаем первый отдел как активный по умолчанию
-        if (data && Object.keys(data).length > 0) {
-          const firstDepartmentId = Object.keys(data)[0];
-          setActiveDepartment(firstDepartmentId);
+        // Сначала найдем все отделы (элементы верхнего уровня, у которых ParId = 1)
+        const departments = data.filter((item) => item.ParId === 1);
+
+        // Находим отдел 21 (МАТЕРИАЛЫ И КОНСТРУКЦИИ ДЛЯ ОБЩЕСТРОИТЕЛЬНЫХ РАБОТ)
+        const department21 = departments.find((dept) => dept.Code === "21");
+
+        // Создаем структуру отделов
+        departments.forEach((dept) => {
+          const id = dept.MaterialTreeId.toString();
+          transformedData[id] = {
+            name: dept.MaterialTreeName,
+            sections: {},
+          };
+
+          // Находим разделы для этого отдела
+          const sections = data.filter(
+            (item) => item.ParId === dept.MaterialTreeId
+          );
+          console.log(`Найдены разделы для отдела ${dept.Code}:`, sections);
+
+          // Добавляем разделы
+          sections.forEach((section) => {
+            const sectionId = section.MaterialTreeId.toString();
+            transformedData[id].sections[sectionId] = {
+              name: section.MaterialTreeName,
+              subsections: {},
+            };
+
+            // Находим подразделы для этого раздела
+            const subsections = data.filter(
+              (item) => item.ParId === section.MaterialTreeId
+            );
+            console.log(
+              `Найдены подразделы для раздела ${section.Code}:`,
+              subsections
+            );
+
+            // Добавляем подразделы
+            subsections.forEach((subsection) => {
+              const subsectionId = subsection.MaterialTreeId.toString();
+              transformedData[id].sections[sectionId].subsections[
+                subsectionId
+              ] = {
+                name: subsection.MaterialTreeName,
+                groups: {},
+              };
+
+              // Находим группы для этого подраздела
+              const groups = data.filter(
+                (item) => item.ParId === subsection.MaterialTreeId
+              );
+              console.log(
+                `Найдены группы для подраздела ${subsection.Code}:`,
+                groups
+              );
+
+              // Добавляем группы
+              groups.forEach((group) => {
+                const groupId = group.MaterialTreeId.toString();
+                transformedData[id].sections[sectionId].subsections[
+                  subsectionId
+                ].groups[groupId] = group.MaterialTreeName;
+              });
+            });
+          });
+        });
+
+        setCatalogData(transformedData);
+
+        // Устанавливаем отдел 21 как активный по умолчанию, если он существует
+        if (transformedData && Object.keys(transformedData).length > 0) {
+          // Находим отдел 21 в преобразованных данных
+          const department21Id = department21
+            ? department21.MaterialTreeId.toString()
+            : null;
+          const departmentId =
+            department21Id && transformedData[department21Id]
+              ? department21Id
+              : Object.keys(transformedData)[0];
+
+          setActiveDepartment(departmentId);
 
           // Устанавливаем первый раздел как активный по умолчанию
-          const firstDepartment = data[firstDepartmentId];
+          const firstDepartment = transformedData[departmentId];
           if (
             firstDepartment &&
             firstDepartment.sections &&

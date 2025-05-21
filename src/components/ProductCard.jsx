@@ -143,38 +143,38 @@ const ProductCard = ({ product, onProductClick }) => {
     <Card as="article" onClick={handleCardClick}>
       <ImageContainer>
         <img
-          src={product.image || "/images/CardImage.png"}
-          alt={product.title}
+          src={product.ImageUrl || "/images/CardImage.png"}
+          alt={product.MaterialName}
         />
       </ImageContainer>
 
-      <Title as="h2">{product.title}</Title>
+      <Title as="h2">{product.MaterialName}</Title>
 
       <PriceInfo>
         <PriceRow>
           <span>Сред. розн. цена:</span>
-          <Price bold>{product.retailPrice} ₸</Price>
+          <Price bold>{product.RetailPrice || "По запросу"} ₸</Price>
         </PriceRow>
         <PriceRow>
           <span>Сред. опт. цена:</span>
-          <Price>{product.wholesalePrice} ₸</Price>
+          <Price>{product.WholesalePrice || "По запросу"} ₸</Price>
         </PriceRow>
         <PriceRow>
           <span>Поставщиков</span>
-          <Price bold> {product.suppliers}</Price>
+          <Price bold> {product.SuppliersCount || 0}</Price>
         </PriceRow>
       </PriceInfo>
 
       <ButtonContainer>
         <OrderButton
           onClick={handleOrderNow}
-          aria-label={`Оформить заказ на ${product.title}`}
+          aria-label={`Оформить заказ на ${product.MaterialName}`}
         >
           Оформить сейчас
         </OrderButton>
         <CartButton
           onClick={handleAddToCart}
-          aria-label={`Добавить ${product.title} в корзину`}
+          aria-label={`Добавить ${product.MaterialName} в корзину`}
         >
           В корзину
         </CartButton>

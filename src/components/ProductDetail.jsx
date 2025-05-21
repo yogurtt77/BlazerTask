@@ -311,26 +311,25 @@ const ProductDetail = () => {
   const productImages = product
     ? [
         {
-          thumbnail: product.image || "/images/CardImage.png",
-          full: product.image || "/images/CardImage.png",
-          alt: `${product.title || "Товар"} - изображение 1`,
+          thumbnail: product.ImageUrl || "/images/CardImage.png",
+          full: product.ImageUrl || "/images/CardImage.png",
+          alt: `${product.MaterialName || "Товар"} - изображение 1`,
         },
         {
-          thumbnail: product.image || "/images/CardImage.png",
-          full: product.image || "/images/CardImage.png",
-          alt: `${product.title || "Товар"} - изображение 2`,
+          thumbnail: product.ImageUrl || "/images/CardImage.png",
+          full: product.ImageUrl || "/images/CardImage.png",
+          alt: `${product.MaterialName || "Товар"} - изображение 2`,
         },
         {
-          thumbnail: product.image || "/images/CardImage.png",
-          full: product.image || "/images/CardImage.png",
-          alt: `${product.title || "Товар"} - изображение 3`,
+          thumbnail: product.ImageUrl || "/images/CardImage.png",
+          full: product.ImageUrl || "/images/CardImage.png",
+          alt: `${product.MaterialName || "Товар"} - изображение 3`,
         },
       ]
     : [];
 
   // Используем данные о поставщиках из объекта product или пустой массив, если данных нет
-  const suppliers =
-    product && product.suppliersList ? product.suppliersList : [];
+  const suppliers = product && product.Suppliers ? product.Suppliers : [];
 
   if (loading) {
     return (
@@ -419,11 +418,11 @@ const ProductDetail = () => {
           />
         </svg>
         <span aria-current="page">
-          {product ? product.title : "Загрузка..."}
+          {product ? product.MaterialName : "Загрузка..."}
         </span>
       </Breadcrumbs>
 
-      <Title as="h1">{product ? product.title : "Загрузка..."}</Title>
+      <Title as="h1">{product ? product.MaterialName : "Загрузка..."}</Title>
 
       <ProductContent>
         <ProductImages as="section" aria-label="Изображения продукта">
@@ -454,21 +453,25 @@ const ProductDetail = () => {
 
         <ProductInfo as="section" aria-label="Информация о продукте">
           <ProductInfoTitle as="h2">
-            {product ? product.title : "Загрузка..."}
+            {product ? product.MaterialName : "Загрузка..."}
           </ProductInfoTitle>
 
           <PriceInfo>
             <PriceRow>
               <span>Сред. розн. цена:</span>
-              <Price bold>{product ? `${product.retailPrice} ₸` : "—"}</Price>
+              <Price bold>
+                {product ? `${product.RetailPrice || "По запросу"} ₸` : "—"}
+              </Price>
             </PriceRow>
             <PriceRow>
               <span>Сред. опт. цена:</span>
-              <Price>{product ? `${product.wholesalePrice} ₸` : "—"}</Price>
+              <Price>
+                {product ? `${product.WholesalePrice || "По запросу"} ₸` : "—"}
+              </Price>
             </PriceRow>
             <PriceRow>
               <span>Поставщиков</span>
-              <Price bold>{product ? product.suppliers : "—"}</Price>
+              <Price bold>{product ? product.SuppliersCount || 0 : "—"}</Price>
             </PriceRow>
           </PriceInfo>
 
@@ -540,16 +543,16 @@ const ProductDetail = () => {
             </thead>
             <tbody>
               {suppliers.map((supplier) => (
-                <tr key={supplier.id}>
-                  <td>{supplier.name}</td>
-                  <td>{supplier.manager}</td>
-                  <td>{supplier.retail}</td>
-                  <td>{supplier.wholesale}</td>
-                  <td>{supplier.unit}</td>
-                  <td>{supplier.region}</td>
+                <tr key={supplier.SupplierId}>
+                  <td>{supplier.SupplierName}</td>
+                  <td>{supplier.ManagerName || "Не указан"}</td>
+                  <td>{supplier.RetailPrice || "По запросу"}</td>
+                  <td>{supplier.WholesalePrice || "По запросу"}</td>
+                  <td>{supplier.UnitOfMeasure || "шт."}</td>
+                  <td>{supplier.Region || "Не указан"}</td>
                   <td>
                     <PrimaryButton
-                      aria-label={`Добавить в корзину товар от поставщика ${supplier.name}`}
+                      aria-label={`Добавить в корзину товар от поставщика ${supplier.SupplierName}`}
                     >
                       В корзину
                     </PrimaryButton>
@@ -569,23 +572,23 @@ const ProductDetail = () => {
         >
           <Table>
             <tbody>
-              {product && product.specs ? (
-                Object.entries(product.specs).map(([key, value]) => (
+              {product && product.Specifications ? (
+                Object.entries(product.Specifications).map(([key, value]) => (
                   <tr key={key}>
                     <th scope="row">
-                      {key === "diameter"
+                      {key === "Diameter"
                         ? "Диаметр"
-                        : key === "type"
+                        : key === "Type"
                         ? "Тип"
-                        : key === "material"
+                        : key === "Material"
                         ? "Материал"
-                        : key === "purpose"
+                        : key === "Purpose"
                         ? "Назначение"
-                        : key === "thickness"
+                        : key === "Thickness"
                         ? "Толщина"
-                        : key === "color"
+                        : key === "Color"
                         ? "Цвет"
-                        : key.charAt(0).toUpperCase() + key.slice(1)}
+                        : key}
                     </th>
                     <td>{value}</td>
                   </tr>
@@ -606,9 +609,9 @@ const ProductDetail = () => {
           hidden={activeTab !== "description"}
           active={activeTab === "description"}
         >
-          {product && product.description ? (
+          {product && product.Description ? (
             <div>
-              {product.description.split(". ").map((sentence, index) => (
+              {product.Description.split(". ").map((sentence, index) => (
                 <p key={index}>
                   {sentence.trim() + (sentence.endsWith(".") ? "" : ".")}
                 </p>

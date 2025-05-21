@@ -1,0 +1,20 @@
+[
+  {
+    "MaterialId": 1,
+    "MaterialTreeId": 1335,
+    "Code": "21-020101-0100",
+    "MaterialName": "Бетон тяжелый класса В3,5 ГОСТ 7473-2010",
+    "UnitId": "м³",
+    "Description": null,
+    "PackCount": null
+  },
+  {
+    "MaterialId": 2,
+    "MaterialTreeId": 1335,
+    "Code": "21-020101-0101",
+    "MaterialName": "Бетон тяжелый класса В3,5 ГОСТ 7473-2010",
+    "UnitId": "м³",
+    "Description": null,
+    "PackCount": null
+  }
+]
