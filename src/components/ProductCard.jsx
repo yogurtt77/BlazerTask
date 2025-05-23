@@ -169,6 +169,12 @@ const ProductCard = ({ product, onProductClick }) => {
         <img
           src={product.ImageUrl || "/images/CardImage.png"}
           alt={product.MaterialName}
+          loading="lazy" // Ленивая загрузка изображений
+          decoding="async" // Асинхронное декодирование изображений
+          onError={(e) => {
+            e.target.onerror = null; // Предотвращаем бесконечную рекурсию
+            e.target.src = "/images/CardImage.png"; // Запасное изображение при ошибке
+          }}
         />
       </ImageContainer>
 

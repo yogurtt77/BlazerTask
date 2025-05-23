@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import Catalog from "./Catalog";
+import CatalogHierarchical from "./CatalogHierarchical";
 import CitySelector from "./CitySelector";
 
 const SearchContainer = styled.div`
@@ -15,25 +15,6 @@ const SearchContainer = styled.div`
   }
 `;
 SearchContainer.displayName = "SearchContainer";
-
-const CatalogButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #333;
-  width: 220px;
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-`;
-CatalogButton.displayName = "CatalogButton";
 
 const SearchInputContainer = styled.div`
   position: relative;
@@ -170,13 +151,14 @@ const MobileSearchContainer = styled.div`
 `;
 MobileSearchContainer.displayName = "MobileSearchContainer";
 
-const SearchBar = ({ onCategorySelect, onSearch }) => {
+const SearchBarHierarchical = ({ onCategorySelect, onSearch }) => {
   const [isRegionOpen, setIsRegionOpen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("Весь Казахстан");
   const [searchQuery, setSearchQuery] = useState("");
   const regionRef = useRef(null);
 
   const regions = [
+    "Весь Казахстан",
     "Нур-Султан",
     "Алматы",
     "Актюбинская область",
@@ -244,7 +226,7 @@ const SearchBar = ({ onCategorySelect, onSearch }) => {
   return (
     <>
       <SearchContainer>
-        <Catalog onCategorySelect={onCategorySelect} />
+        <CatalogHierarchical onCategorySelect={onCategorySelect} />
 
         <SearchInputContainer>
           <SearchInput
@@ -324,6 +306,6 @@ const SearchBar = ({ onCategorySelect, onSearch }) => {
   );
 };
 
-SearchBar.displayName = "SearchBar";
+SearchBarHierarchical.displayName = "SearchBarHierarchical";
 
-export default SearchBar;
+export default SearchBarHierarchical;

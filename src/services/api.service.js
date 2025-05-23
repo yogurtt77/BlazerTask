@@ -5,6 +5,7 @@ const cache = {
   catalog: null,
   products: null,
   categoryProducts: {},
+  paginatedProducts: {}, // Кэш для пагинированных данных
 };
 
 /**
@@ -77,6 +78,60 @@ const ApiService = {
       return products;
     } catch (error) {
       console.error("Ошибка при получении продуктов:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Получить список продуктов с пагинацией
+   * @param {number} page - Номер страницы (начиная с 1)
+   * @param {number} pageSize - Размер страницы
+   * @returns {Promise<Object>} - Объект с данными пагинации и списком продуктов
+   */
+  getProductsWithPagination: async (page = 1, pageSize = 20) => {
+    // Создаем ключ для кэша пагинированных данных
+    const paginationKey = `page_${page}_size_${pageSize}`;
+
+    // Проверяем, есть ли данные в кэше
+    if (cache.paginatedProducts[paginationKey]) {
+      console.log(`Данные пагинации получены из кэша: ${paginationKey}`);
+      return cache.paginatedProducts[paginationKey];
+    }
+
+    try {
+      // Получаем все продукты (используем кэш, если возможно)
+      const allProducts = await ApiService.getProducts();
+
+      // Вычисляем общее количество страниц
+      const totalItems = allProducts.length;
+      const totalPages = Math.ceil(totalItems / pageSize);
+
+      // Вычисляем индексы для текущей страницы
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+      // Получаем продукты для текущей страницы
+      const paginatedProducts = allProducts.slice(startIndex, endIndex);
+
+      // Формируем результат
+      const result = {
+        data: paginatedProducts,
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      };
+
+      // Сохраняем результат в кэш
+      cache.paginatedProducts[paginationKey] = result;
+
+      return result;
+    } catch (error) {
+      console.error("Ошибка при получении продуктов с пагинацией:", error);
       throw error;
     }
   },
@@ -183,6 +238,53 @@ const ApiService = {
       return filteredProducts;
     } catch (error) {
       console.error("Ошибка при фильтрации продуктов:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Фильтрация продуктов по категории с пагинацией
+   * @param {Object} category - Объект с параметрами категории
+   * @param {number} page - Номер страницы (начиная с 1)
+   * @param {number} pageSize - Размер страницы
+   * @returns {Promise<Object>} - Объект с данными пагинации и отфильтрованным списком продуктов
+   */
+  filterProductsByCategoryWithPagination: async (
+    category,
+    page = 1,
+    pageSize = 20
+  ) => {
+    try {
+      // Получаем все отфильтрованные продукты
+      const filteredProducts = await ApiService.filterProductsByCategory(
+        category
+      );
+
+      // Вычисляем общее количество страниц
+      const totalItems = filteredProducts.length;
+      const totalPages = Math.ceil(totalItems / pageSize);
+
+      // Вычисляем индексы для текущей страницы
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+      // Получаем продукты для текущей страницы
+      const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+      // Формируем результат
+      return {
+        data: paginatedProducts,
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error("Ошибка при фильтрации продуктов с пагинацией:", error);
       throw error;
     }
   },
@@ -384,6 +486,132 @@ const ApiService = {
         product.MaterialName &&
         product.MaterialName.toLowerCase().includes(lowerQuery)
     );
+  },
+
+  /**
+   * Поиск продуктов по запросу с пагинацией
+   * @param {string} query - Поисковый запрос
+   * @param {number} page - Номер страницы (начиная с 1)
+   * @param {number} pageSize - Размер страницы
+   * @returns {Promise<Object>} - Объект с данными пагинации и результатами поиска
+   */
+  searchProductsWithPagination: async (query, page = 1, pageSize = 20) => {
+    try {
+      // Получаем все результаты поиска
+      const searchResults = await ApiService.searchProducts(query);
+
+      // Вычисляем общее количество страниц
+      const totalItems = searchResults.length;
+      const totalPages = Math.ceil(totalItems / pageSize);
+
+      // Вычисляем индексы для текущей страницы
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+      // Получаем продукты для текущей страницы
+      const paginatedResults = searchResults.slice(startIndex, endIndex);
+
+      // Формируем результат
+      return {
+        data: paginatedResults,
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error("Ошибка при поиске продуктов с пагинацией:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Поиск продуктов по запросу с фильтрацией по категории
+   * @param {string} query - Поисковый запрос
+   * @param {Object} category - Объект с параметрами категории
+   * @returns {Promise<Array>} - Результаты поиска с фильтрацией
+   */
+  searchProductsWithCategory: async (query, category) => {
+    try {
+      // Сначала получаем отфильтрованные по категории продукты
+      const filteredProducts = await ApiService.filterProductsByCategory(
+        category
+      );
+
+      // Если нет поискового запроса, возвращаем все отфильтрованные продукты
+      if (!query) return filteredProducts;
+
+      // Фильтруем по поисковому запросу
+      const lowerQuery = query.toLowerCase();
+      return filteredProducts.filter(
+        (product) =>
+          product.MaterialName &&
+          product.MaterialName.toLowerCase().includes(lowerQuery)
+      );
+    } catch (error) {
+      console.error(
+        "Ошибка при поиске продуктов с фильтрацией по категории:",
+        error
+      );
+      throw error;
+    }
+  },
+
+  /**
+   * Поиск продуктов по запросу с фильтрацией по категории и пагинацией
+   * @param {string} query - Поисковый запрос
+   * @param {Object} category - Объект с параметрами категории
+   * @param {number} page - Номер страницы (начиная с 1)
+   * @param {number} pageSize - Размер страницы
+   * @returns {Promise<Object>} - Объект с данными пагинации и результатами поиска с фильтрацией
+   */
+  searchProductsWithCategoryAndPagination: async (
+    query,
+    category,
+    page = 1,
+    pageSize = 20
+  ) => {
+    try {
+      // Получаем все результаты поиска с фильтрацией по категории
+      const searchResults = await ApiService.searchProductsWithCategory(
+        query,
+        category
+      );
+
+      // Вычисляем общее количество страниц
+      const totalItems = searchResults.length;
+      const totalPages = Math.ceil(totalItems / pageSize);
+
+      // Вычисляем индексы для текущей страницы
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+      // Получаем продукты для текущей страницы
+      const paginatedResults = searchResults.slice(startIndex, endIndex);
+
+      // Формируем результат
+      return {
+        data: paginatedResults,
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error(
+        "Ошибка при поиске продуктов с фильтрацией и пагинацией:",
+        error
+      );
+      throw error;
+    }
   },
 };
 

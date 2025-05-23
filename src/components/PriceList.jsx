@@ -1,12 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import SearchBar from "./SearchBar";
+import SearchBarHierarchical from "./SearchBarHierarchical";
 import ProductCard from "./ProductCard";
+import ProductCardSkeleton from "./ProductCardSkeleton";
+import Pagination from "./Pagination";
+import { useQueryClient } from "@tanstack/react-query";
+import ApiService from "../services/api.service";
 import {
   useProducts,
   useFilteredProducts,
   useSearchProducts,
+  usePaginatedProducts,
+  usePaginatedFilteredProducts,
+  usePaginatedSearchProducts,
+  usePaginatedSearchWithCategory,
 } from "../hooks/useApi";
 
 const PriceListContainer = styled.div`
@@ -119,50 +127,263 @@ const InfoText = styled.p`
 `;
 InfoText.displayName = "InfoText";
 
+// Ключи для хранения состояния фильтров в localStorage
+const STORAGE_KEYS = {
+  CATEGORY: "priceList.selectedCategory",
+  SEARCH: "priceList.searchQuery",
+  PAGE: "priceList.currentPage",
+};
+
+// Функция для сохранения состояния фильтров
+const saveFiltersState = (category, query, page) => {
+  if (category) {
+    localStorage.setItem(STORAGE_KEYS.CATEGORY, JSON.stringify(category));
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.CATEGORY);
+  }
+
+  if (query) {
+    localStorage.setItem(STORAGE_KEYS.SEARCH, query);
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.SEARCH);
+  }
+
+  localStorage.setItem(STORAGE_KEYS.PAGE, page.toString());
+};
+
+// Функция для загрузки состояния фильтров
+const loadFiltersState = () => {
+  try {
+    const category = localStorage.getItem(STORAGE_KEYS.CATEGORY);
+    const query = localStorage.getItem(STORAGE_KEYS.SEARCH) || "";
+    const page = parseInt(localStorage.getItem(STORAGE_KEYS.PAGE) || "1", 10);
+
+    return {
+      category: category ? JSON.parse(category) : null,
+      query,
+      page,
+    };
+  } catch (error) {
+    console.error("Ошибка при загрузке состояния фильтров:", error);
+    return { category: null, query: "", page: 1 };
+  }
+};
+
 const PriceList = () => {
   const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  // Максимальное количество карточек на главном экране без фильтрации
-  const MAX_CARDS_ON_MAIN = 20;
+  const queryClient = useQueryClient();
 
-  // Получаем все продукты с использованием React Query
-  const {
-    data: allProducts = [],
-    isLoading: isLoadingProducts,
-    error: productsError,
-  } = useProducts();
+  // Загружаем сохраненное состояние фильтров при инициализации
+  const initialState = loadFiltersState();
 
-  // Получаем отфильтрованные продукты по категории с использованием React Query
+  const [selectedCategory, setSelectedCategory] = useState(
+    initialState.category
+  );
+  const [searchQuery, setSearchQuery] = useState(initialState.query);
+  const [currentPage, setCurrentPage] = useState(initialState.page);
+  const PAGE_SIZE = 20; // Размер страницы для пагинации
+
+  // Получаем продукты с пагинацией
   const {
-    data: categoryFilteredProducts = [],
-    isLoading: isLoadingFiltered,
-    error: filteredError,
-  } = useFilteredProducts(selectedCategory, {
+    data: paginatedData = {
+      data: [],
+      pagination: { totalItems: 0, totalPages: 1 },
+    },
+    isLoading: isLoadingPaginated,
+    error: paginatedError,
+    isFetching: isFetchingPaginated,
+  } = usePaginatedProducts(currentPage, PAGE_SIZE, {
+    // Не выполнять запрос, если выбрана категория или выполняется поиск
+    enabled: !selectedCategory && !searchQuery,
+  });
+
+  // Получаем отфильтрованные продукты по категории с пагинацией
+  const {
+    data: paginatedFilteredData = {
+      data: [],
+      pagination: { totalItems: 0, totalPages: 1 },
+    },
+    isLoading: isLoadingFilteredPaginated,
+    error: filteredPaginatedError,
+    isFetching: isFetchingFilteredPaginated,
+  } = usePaginatedFilteredProducts(selectedCategory, currentPage, PAGE_SIZE, {
     // Не выполнять запрос, если выполняется поиск
     enabled: !!selectedCategory && !searchQuery,
   });
 
-  // Получаем результаты поиска с использованием React Query
+  // Получаем результаты поиска с пагинацией
   const {
-    data: searchResults = [],
-    isLoading: isLoadingSearch,
-    error: searchError,
-  } = useSearchProducts(searchQuery, {
-    // Не выполнять запрос, если выбрана категория
+    data: paginatedSearchData = {
+      data: [],
+      pagination: { totalItems: 0, totalPages: 1 },
+    },
+    isLoading: isLoadingSearchPaginated,
+    error: searchPaginatedError,
+    isFetching: isFetchingSearchPaginated,
+  } = usePaginatedSearchProducts(searchQuery, currentPage, PAGE_SIZE, {
+    // Не выполнять запрос, если выбрана категория и есть поисковый запрос
     enabled: !!searchQuery && !selectedCategory,
   });
 
+  // Получаем результаты поиска с фильтрацией по категории и пагинацией
+  const {
+    data: paginatedSearchWithCategoryData = {
+      data: [],
+      pagination: { totalItems: 0, totalPages: 1 },
+    },
+    isLoading: isLoadingSearchWithCategoryPaginated,
+    error: searchWithCategoryPaginatedError,
+    isFetching: isFetchingSearchWithCategoryPaginated,
+  } = usePaginatedSearchWithCategory(
+    searchQuery,
+    selectedCategory,
+    currentPage,
+    PAGE_SIZE,
+    {
+      // Выполнять запрос только если есть и категория, и поисковый запрос
+      enabled: !!searchQuery && !!selectedCategory,
+    }
+  );
+
   // Определяем, какие данные отображать
-  const productsToDisplay = searchQuery
-    ? searchResults
-    : selectedCategory
-    ? categoryFilteredProducts
-    : allProducts;
+  const productsToDisplay =
+    searchQuery && selectedCategory
+      ? paginatedSearchWithCategoryData.data // Двойная фильтрация: поиск + категория
+      : searchQuery
+      ? paginatedSearchData.data // Только поиск
+      : selectedCategory
+      ? paginatedFilteredData.data // Только категория
+      : paginatedData.data; // Все продукты
+
+  // Определяем информацию о пагинации
+  const paginationInfo =
+    searchQuery && selectedCategory
+      ? paginatedSearchWithCategoryData.pagination // Двойная фильтрация: поиск + категория
+      : searchQuery
+      ? paginatedSearchData.pagination // Только поиск
+      : selectedCategory
+      ? paginatedFilteredData.pagination // Только категория
+      : paginatedData.pagination; // Все продукты
 
   // Общее состояние загрузки и ошибок
-  const isLoading = isLoadingProducts || isLoadingFiltered || isLoadingSearch;
-  const error = productsError || filteredError || searchError;
+  const isLoading =
+    isLoadingPaginated ||
+    isLoadingFilteredPaginated ||
+    isLoadingSearchPaginated ||
+    isLoadingSearchWithCategoryPaginated;
+
+  const isFetching =
+    isFetchingPaginated ||
+    isFetchingFilteredPaginated ||
+    isFetchingSearchPaginated ||
+    isFetchingSearchWithCategoryPaginated;
+
+  const error =
+    paginatedError ||
+    filteredPaginatedError ||
+    searchPaginatedError ||
+    searchWithCategoryPaginatedError;
+
+  // Эффект для обновления состояния фильтров при изменении URL
+  useEffect(() => {
+    // Загружаем сохраненное состояние фильтров
+    const savedState = loadFiltersState();
+
+    // Если есть сохраненные фильтры, применяем их
+    if (
+      savedState.category !== null ||
+      savedState.query !== "" ||
+      savedState.page !== 1
+    ) {
+      // Устанавливаем состояние только если оно отличается от текущего
+      if (
+        JSON.stringify(savedState.category) !== JSON.stringify(selectedCategory)
+      ) {
+        setSelectedCategory(savedState.category);
+      }
+
+      if (savedState.query !== searchQuery) {
+        setSearchQuery(savedState.query);
+      }
+
+      if (savedState.page !== currentPage) {
+        setCurrentPage(savedState.page);
+      }
+    }
+  }, [navigate]); // Зависимость от navigate, чтобы эффект срабатывал при изменении URL
+
+  // Предварительная загрузка следующей страницы
+  useEffect(() => {
+    // Если есть следующая страница, предварительно загружаем ее данные
+    if (paginationInfo.hasNextPage) {
+      const nextPage = currentPage + 1;
+
+      if (!selectedCategory && !searchQuery) {
+        // Предзагрузка следующей страницы всех продуктов
+        queryClient.prefetchQuery({
+          queryKey: ["paginatedProducts", nextPage, PAGE_SIZE],
+          queryFn: () =>
+            ApiService.getProductsWithPagination(nextPage, PAGE_SIZE),
+        });
+      } else if (selectedCategory && !searchQuery) {
+        // Предзагрузка следующей страницы отфильтрованных продуктов
+        queryClient.prefetchQuery({
+          queryKey: [
+            "paginatedFilteredProducts",
+            selectedCategory?.department,
+            selectedCategory?.section,
+            selectedCategory?.subsection,
+            selectedCategory?.group,
+            nextPage,
+            PAGE_SIZE,
+          ],
+          queryFn: () =>
+            ApiService.filterProductsByCategoryWithPagination(
+              selectedCategory,
+              nextPage,
+              PAGE_SIZE
+            ),
+        });
+      } else if (searchQuery && !selectedCategory) {
+        // Предзагрузка следующей страницы результатов поиска
+        queryClient.prefetchQuery({
+          queryKey: [
+            "paginatedSearchProducts",
+            searchQuery,
+            nextPage,
+            PAGE_SIZE,
+          ],
+          queryFn: () =>
+            ApiService.searchProductsWithPagination(
+              searchQuery,
+              nextPage,
+              PAGE_SIZE
+            ),
+        });
+      } else if (searchQuery && selectedCategory) {
+        // Предзагрузка следующей страницы результатов поиска с фильтрацией по категории
+        queryClient.prefetchQuery({
+          queryKey: [
+            "paginatedSearchWithCategory",
+            searchQuery,
+            selectedCategory?.department,
+            selectedCategory?.section,
+            selectedCategory?.subsection,
+            selectedCategory?.group,
+            nextPage,
+            PAGE_SIZE,
+          ],
+          queryFn: () =>
+            ApiService.searchProductsWithCategoryAndPagination(
+              searchQuery,
+              selectedCategory,
+              nextPage,
+              PAGE_SIZE
+            ),
+        });
+      }
+    }
+  }, [currentPage, paginationInfo, selectedCategory, searchQuery, queryClient]);
 
   const handleProductClick = (product) => {
     navigate(`/product/${product.MaterialId}`);
@@ -172,16 +393,40 @@ const PriceList = () => {
     setSelectedCategory(category);
     // Сбрасываем поисковый запрос при выборе категории
     setSearchQuery("");
+    // Сбрасываем страницу при изменении категории
+    setCurrentPage(1);
+
+    // Сохраняем состояние фильтров
+    saveFiltersState(category, "", 1);
   };
 
   const handleClearFilter = () => {
     setSelectedCategory(null);
+    // Сбрасываем страницу при очистке фильтра
+    setCurrentPage(1);
+
+    // Сохраняем состояние фильтров
+    saveFiltersState(null, searchQuery, 1);
   };
 
   const handleSearch = (query) => {
     setSearchQuery(query);
-    // Сбрасываем категорию при поиске
-    setSelectedCategory(null);
+    // НЕ сбрасываем категорию при поиске, чтобы работала двойная фильтрация
+    // Сбрасываем страницу при поиске
+    setCurrentPage(1);
+
+    // Сохраняем состояние фильтров
+    saveFiltersState(selectedCategory, query, 1);
+  };
+
+  // Обработчик изменения страницы
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Прокручиваем страницу вверх при изменении страницы
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Сохраняем состояние фильтров
+    saveFiltersState(selectedCategory, searchQuery, page);
   };
 
   return (
@@ -221,13 +466,13 @@ const PriceList = () => {
         <ActiveFilters role="status" aria-live="polite">
           {selectedCategory && (
             <FilterTag>
-              {selectedCategory.group
-                ? `Группа: ${selectedCategory.group}`
-                : selectedCategory.subsection
-                ? `Подраздел: ${selectedCategory.subsection}`
-                : selectedCategory.section
-                ? `Раздел: ${selectedCategory.section}`
-                : `Отдел: ${selectedCategory.department}`}
+              {selectedCategory.groupName
+                ? `Группа: ${selectedCategory.groupName}`
+                : selectedCategory.subsectionName
+                ? `Подраздел: ${selectedCategory.subsectionName}`
+                : selectedCategory.sectionName
+                ? `Раздел: ${selectedCategory.sectionName}`
+                : `Отдел: ${selectedCategory.departmentName}`}
               <button
                 onClick={handleClearFilter}
                 aria-label="Очистить фильтр категории"
@@ -241,7 +486,11 @@ const PriceList = () => {
             <FilterTag>
               Поиск: {searchQuery}
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  // Сохраняем состояние фильтров без поискового запроса
+                  saveFiltersState(selectedCategory, "", currentPage);
+                }}
                 aria-label="Очистить поисковый запрос"
               >
                 ×
@@ -251,24 +500,49 @@ const PriceList = () => {
         </ActiveFilters>
       )}
 
-      {/* Отладочная информация о выбранной категории */}
-      {selectedCategory && (
+      {/* Отладочная информация о выбранной категории - скрыта в продакшн */}
+      {false && selectedCategory && (
         <div style={{ marginBottom: "10px", fontSize: "12px", color: "#666" }}>
           Выбрана категория:
-          {selectedCategory.department &&
-            ` Отдел: ${selectedCategory.department}`}
-          {selectedCategory.section && ` > Раздел: ${selectedCategory.section}`}
-          {selectedCategory.subsection &&
-            ` > Подраздел: ${selectedCategory.subsection}`}
-          {selectedCategory.group && ` > Группа: ${selectedCategory.group}`}
+          {selectedCategory.departmentName &&
+            ` Отдел: ${selectedCategory.departmentName} (${selectedCategory.department})`}
+          {selectedCategory.sectionName &&
+            ` > Раздел: ${selectedCategory.sectionName} (${selectedCategory.section})`}
+          {selectedCategory.subsectionName &&
+            ` > Подраздел: ${selectedCategory.subsectionName} (${selectedCategory.subsection})`}
+          {selectedCategory.groupName &&
+            ` > Группа: ${selectedCategory.groupName} (${selectedCategory.group})`}
         </div>
       )}
 
-      <SearchBar
+      <SearchBarHierarchical
         onCategorySelect={handleCategorySelect}
         onSearch={handleSearch}
       />
 
+      {/* Показываем скелетоны во время первой загрузки */}
+      {isLoading && (
+        <ProductGrid as="ul" aria-label="Загрузка товаров">
+          {Array.from({ length: PAGE_SIZE }).map((_, index) => (
+            <li key={`skeleton-${index}`} style={{ listStyle: "none" }}>
+              <ProductCardSkeleton />
+            </li>
+          ))}
+        </ProductGrid>
+      )}
+
+      {/* Показываем ошибку, если она есть */}
+      {error && (
+        <div
+          role="alert"
+          style={{ textAlign: "center", padding: "20px", color: "red" }}
+        >
+          Ошибка: {error.message || "Произошла ошибка"}. Пожалуйста, обновите
+          страницу или попробуйте позже.
+        </div>
+      )}
+
+      {/* Показываем данные, когда они загружены */}
       {!isLoading && !error && (
         <>
           {productsToDisplay.length === 0 ? (
@@ -282,29 +556,31 @@ const PriceList = () => {
           ) : (
             <>
               <ProductGrid as="ul" aria-label="Список товаров">
-                {/* Если применена фильтрация или поиск, показываем все карточки, иначе ограничиваем до MAX_CARDS_ON_MAIN */}
-                {(selectedCategory || searchQuery
-                  ? productsToDisplay
-                  : productsToDisplay.slice(0, MAX_CARDS_ON_MAIN)
-                ).map((product) => (
+                {/* Показываем данные с индикацией загрузки при обновлении */}
+                {productsToDisplay.map((product) => (
                   <li key={product.MaterialId} style={{ listStyle: "none" }}>
-                    <ProductCard
-                      product={product}
-                      onProductClick={handleProductClick}
-                    />
+                    {isFetching && !isLoading ? (
+                      <ProductCardSkeleton />
+                    ) : (
+                      <ProductCard
+                        product={product}
+                        onProductClick={handleProductClick}
+                      />
+                    )}
                   </li>
                 ))}
               </ProductGrid>
 
-              {/* Показываем информацию только если нет фильтрации и поиска, и есть больше товаров, чем показано */}
-              {!selectedCategory &&
-                !searchQuery &&
-                productsToDisplay.length > MAX_CARDS_ON_MAIN && (
-                  <InfoText>
-                    Показано {MAX_CARDS_ON_MAIN} из {productsToDisplay.length}{" "}
-                    товаров
-                  </InfoText>
-                )}
+              {/* Компонент пагинации */}
+              {paginationInfo.totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={paginationInfo.totalPages}
+                  totalItems={paginationInfo.totalItems}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={handlePageChange}
+                />
+              )}
             </>
           )}
         </>
