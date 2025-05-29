@@ -17,7 +17,11 @@ const API_CONFIG = {
     PRODUCTS: "/api/Materials",
     PRODUCT_DETAILS: "/api/Materials/:id",
     CATALOG: "/api/MaterialTrees",
+    PHOTOS: "/api/MaterialPhotoes",
   },
+
+  // Базовый URL для изображений
+  IMAGES_BASE_URL: "https://test.sadi.kz",
 
   // Настройки запросов
   REQUEST_OPTIONS: {

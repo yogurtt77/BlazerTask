@@ -51,6 +51,16 @@ const CatalogDropdown = styled.div`
     right: 0;
     left: auto;
   }
+
+  /* На мобильных устройствах делаем каталог на всю ширину */
+  @media (max-width: 768px) {
+    left: 0;
+    right: 0;
+    width: calc(100vw - 32px);
+    max-width: none;
+    margin-left: -16px;
+    margin-right: -16px;
+  }
 `;
 
 const LoadingIndicator = styled.div`
@@ -93,9 +103,19 @@ const CategoryColumn = styled.div`
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 2px; /* Добавляем небольшие отступы по бокам */
+  opacity: 0;
+  transform: translateX(20px);
+  animation: slideIn 0.3s ease-out forwards;
 
   &:last-child {
     border-right: none;
+  }
+
+  @keyframes slideIn {
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 `;
 
@@ -113,6 +133,17 @@ const CategoryItem = styled.div`
 
   &:hover {
     background-color: #f9f9f9;
+  }
+
+  /* На мобильных устройствах увеличиваем область нажатия */
+  @media (max-width: 768px) {
+    padding: 16px;
+    min-height: 48px;
+    font-size: 14px;
+
+    &:active {
+      background-color: #e9ecef;
+    }
   }
 `;
 
@@ -147,6 +178,15 @@ const CategoryArrow = styled.div`
     transition: transform 0.3s ease;
     transform: ${(props) => (props.expanded ? "rotate(90deg)" : "rotate(0)")};
   }
+
+  /* На мобильных устройствах делаем стрелки более заметными */
+  @media (max-width: 768px) {
+    img {
+      width: 20px;
+      height: 20px;
+      opacity: 0.7;
+    }
+  }
 `;
 
 const CatalogHierarchical = ({ onCategorySelect }) => {
@@ -155,6 +195,7 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
   const [activeSection, setActiveSection] = useState(null);
   const [activeSubsection, setActiveSubsection] = useState(null);
   const [activeGroup, setActiveGroup] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Состояние для отображения колонок
   const [showSections, setShowSections] = useState(false);
@@ -162,6 +203,20 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
   const [showGroups, setShowGroups] = useState(false);
 
   const catalogRef = useRef(null);
+
+  // Определяем мобильное устройство
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkIfMobile);
+    };
+  }, []);
 
   // Используем React Query для получения данных каталога
   const {
@@ -253,9 +308,9 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
     setIsOpen(!isOpen);
   };
 
-  const handleDepartmentClick = (departmentId) => {
-    if (activeDepartment === departmentId) {
-      // Если нажали на тот же отдел, скрываем разделы
+  const handleCatalogMouseLeave = () => {
+    // При уходе мыши с каталога скрываем все подкатегории только на десктопе
+    if (!isMobile) {
       setActiveDepartment(null);
       setActiveSection(null);
       setActiveSubsection(null);
@@ -263,24 +318,52 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
       setShowSections(false);
       setShowSubsections(false);
       setShowGroups(false);
+    }
+  };
 
-      // Сбрасываем фильтр
-      if (onCategorySelect) {
-        onCategorySelect(null);
-      }
-    } else {
-      // Если нажали на другой отдел, показываем его разделы
+  const handleDepartmentHover = (departmentId) => {
+    // При наведении показываем разделы только на десктопе
+    if (!isMobile) {
       setActiveDepartment(departmentId);
       setActiveSection(null);
       setActiveSubsection(null);
       setActiveGroup(null);
-
-      // Важно: сначала устанавливаем showSections в true
       setShowSections(true);
       setShowSubsections(false);
       setShowGroups(false);
+    }
+  };
 
-      // Вызываем функцию фильтрации ТОЛЬКО с выбранным отделом
+  const handleDepartmentClick = (departmentId) => {
+    if (isMobile) {
+      // На мобильных: при первом клике показываем разделы, при втором - применяем фильтр
+      if (activeDepartment === departmentId && showSections) {
+        // Второй клик - применяем фильтрацию
+        if (onCategorySelect && catalogData && catalogData[departmentId]) {
+          onCategorySelect({
+            department: departmentId,
+            departmentName: catalogData[departmentId].name,
+            section: null,
+            sectionName: null,
+            subsection: null,
+            subsectionName: null,
+            group: null,
+            groupName: null,
+          });
+        }
+        setIsOpen(false);
+      } else {
+        // Первый клик - показываем разделы
+        setActiveDepartment(departmentId);
+        setActiveSection(null);
+        setActiveSubsection(null);
+        setActiveGroup(null);
+        setShowSections(true);
+        setShowSubsections(false);
+        setShowGroups(false);
+      }
+    } else {
+      // На десктопе: сразу применяем фильтрацию
       if (onCategorySelect && catalogData && catalogData[departmentId]) {
         onCategorySelect({
           department: departmentId,
@@ -293,49 +376,55 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
           groupName: null,
         });
       }
-
-      // Добавляем небольшую задержку для анимации
-      setTimeout(() => {
-        // Проверяем, что отдел все еще активен
-        if (activeDepartment === departmentId) {
-          // Убедимся, что разделы видны
-          setShowSections(true);
-        }
-      }, 50);
+      setIsOpen(false);
     }
   };
 
-  const handleSectionClick = (sectionId) => {
-    if (activeSection === sectionId) {
-      // Если нажали на тот же раздел, скрываем подразделы
-      setActiveSection(null);
-      setActiveSubsection(null);
-      setActiveGroup(null);
-      setShowSubsections(false);
-      setShowGroups(false);
-
-      // Вызываем функцию фильтрации ТОЛЬКО с выбранным отделом
-      if (onCategorySelect && catalogData && catalogData[activeDepartment]) {
-        onCategorySelect({
-          department: activeDepartment,
-          departmentName: catalogData[activeDepartment].name,
-          section: null,
-          sectionName: null,
-          subsection: null,
-          subsectionName: null,
-          group: null,
-          groupName: null,
-        });
-      }
-    } else {
-      // Если нажали на другой раздел, показываем его подразделы
+  const handleSectionHover = (sectionId) => {
+    // При наведении показываем подразделы только на десктопе
+    if (!isMobile) {
       setActiveSection(sectionId);
       setActiveSubsection(null);
       setActiveGroup(null);
       setShowSubsections(true);
       setShowGroups(false);
+    }
+  };
 
-      // Вызываем функцию фильтрации ТОЛЬКО с выбранным отделом и разделом
+  const handleSectionClick = (sectionId) => {
+    if (isMobile) {
+      // На мобильных: при первом клике показываем подразделы, при втором - применяем фильтр
+      if (activeSection === sectionId && showSubsections) {
+        // Второй клик - применяем фильтрацию
+        if (
+          onCategorySelect &&
+          catalogData &&
+          catalogData[activeDepartment] &&
+          catalogData[activeDepartment].sections &&
+          catalogData[activeDepartment].sections[sectionId]
+        ) {
+          onCategorySelect({
+            department: activeDepartment,
+            departmentName: catalogData[activeDepartment].name,
+            section: sectionId,
+            sectionName: catalogData[activeDepartment].sections[sectionId].name,
+            subsection: null,
+            subsectionName: null,
+            group: null,
+            groupName: null,
+          });
+        }
+        setIsOpen(false);
+      } else {
+        // Первый клик - показываем подразделы
+        setActiveSection(sectionId);
+        setActiveSubsection(null);
+        setActiveGroup(null);
+        setShowSubsections(true);
+        setShowGroups(false);
+      }
+    } else {
+      // На десктопе: сразу применяем фильтрацию
       if (
         onCategorySelect &&
         catalogData &&
@@ -354,43 +443,59 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
           groupName: null,
         });
       }
+      setIsOpen(false);
+    }
+  };
+
+  const handleSubsectionHover = (subsectionId) => {
+    // При наведении показываем группы только на десктопе
+    if (!isMobile) {
+      setActiveSubsection(subsectionId);
+      setActiveGroup(null);
+      setShowGroups(true);
     }
   };
 
   const handleSubsectionClick = (subsectionId) => {
-    if (activeSubsection === subsectionId) {
-      // Если нажали на тот же подраздел, скрываем группы
-      setActiveSubsection(null);
-      setActiveGroup(null);
-      setShowGroups(false);
-
-      // Вызываем функцию фильтрации ТОЛЬКО с выбранным отделом и разделом
-      if (
-        onCategorySelect &&
-        catalogData &&
-        catalogData[activeDepartment] &&
-        catalogData[activeDepartment].sections &&
-        catalogData[activeDepartment].sections[activeSection]
-      ) {
-        onCategorySelect({
-          department: activeDepartment,
-          departmentName: catalogData[activeDepartment].name,
-          section: activeSection,
-          sectionName:
-            catalogData[activeDepartment].sections[activeSection].name,
-          subsection: null,
-          subsectionName: null,
-          group: null,
-          groupName: null,
-        });
+    if (isMobile) {
+      // На мобильных: при первом клике показываем группы, при втором - применяем фильтр
+      if (activeSubsection === subsectionId && showGroups) {
+        // Второй клик - применяем фильтрацию
+        if (
+          onCategorySelect &&
+          catalogData &&
+          catalogData[activeDepartment] &&
+          catalogData[activeDepartment].sections &&
+          catalogData[activeDepartment].sections[activeSection] &&
+          catalogData[activeDepartment].sections[activeSection].subsections &&
+          catalogData[activeDepartment].sections[activeSection].subsections[
+            subsectionId
+          ]
+        ) {
+          onCategorySelect({
+            department: activeDepartment,
+            departmentName: catalogData[activeDepartment].name,
+            section: activeSection,
+            sectionName:
+              catalogData[activeDepartment].sections[activeSection].name,
+            subsection: subsectionId,
+            subsectionName:
+              catalogData[activeDepartment].sections[activeSection].subsections[
+                subsectionId
+              ].name,
+            group: null,
+            groupName: null,
+          });
+        }
+        setIsOpen(false);
+      } else {
+        // Первый клик - показываем группы
+        setActiveSubsection(subsectionId);
+        setActiveGroup(null);
+        setShowGroups(true);
       }
     } else {
-      // Если нажали на другой подраздел, показываем его группы
-      setActiveSubsection(subsectionId);
-      setActiveGroup(null);
-      setShowGroups(true);
-
-      // Вызываем функцию фильтрации ТОЛЬКО с выбранным отделом, разделом и подразделом
+      // На десктопе: сразу применяем фильтрацию
       if (
         onCategorySelect &&
         catalogData &&
@@ -417,81 +522,47 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
           groupName: null,
         });
       }
+      setIsOpen(false);
     }
   };
 
   const handleGroupClick = (groupId) => {
-    if (activeGroup === groupId) {
-      // Если нажали на ту же группу, снимаем выбор
-      setActiveGroup(null);
+    // При нажатии применяем фильтрацию
+    if (
+      onCategorySelect &&
+      catalogData &&
+      catalogData[activeDepartment] &&
+      catalogData[activeDepartment].sections &&
+      catalogData[activeDepartment].sections[activeSection] &&
+      catalogData[activeDepartment].sections[activeSection].subsections &&
+      catalogData[activeDepartment].sections[activeSection].subsections[
+        activeSubsection
+      ] &&
+      catalogData[activeDepartment].sections[activeSection].subsections[
+        activeSubsection
+      ].groups
+    ) {
+      const groupName =
+        catalogData[activeDepartment].sections[activeSection].subsections[
+          activeSubsection
+        ].groups[groupId];
 
-      // Вызываем функцию фильтрации ТОЛЬКО с выбранным отделом, разделом и подразделом
-      if (
-        onCategorySelect &&
-        catalogData &&
-        catalogData[activeDepartment] &&
-        catalogData[activeDepartment].sections &&
-        catalogData[activeDepartment].sections[activeSection] &&
-        catalogData[activeDepartment].sections[activeSection].subsections &&
-        catalogData[activeDepartment].sections[activeSection].subsections[
-          activeSubsection
-        ]
-      ) {
-        onCategorySelect({
-          department: activeDepartment,
-          departmentName: catalogData[activeDepartment].name,
-          section: activeSection,
-          sectionName:
-            catalogData[activeDepartment].sections[activeSection].name,
-          subsection: activeSubsection,
-          subsectionName:
-            catalogData[activeDepartment].sections[activeSection].subsections[
-              activeSubsection
-            ].name,
-          group: null,
-          groupName: null,
-        });
-      }
-    } else {
-      // Если нажали на другую группу, выбираем ее
-      setActiveGroup(groupId);
-
-      // Вызываем функцию фильтрации с полной иерархией до группы
-      if (
-        onCategorySelect &&
-        catalogData &&
-        catalogData[activeDepartment] &&
-        catalogData[activeDepartment].sections &&
-        catalogData[activeDepartment].sections[activeSection] &&
-        catalogData[activeDepartment].sections[activeSection].subsections &&
-        catalogData[activeDepartment].sections[activeSection].subsections[
-          activeSubsection
-        ] &&
-        catalogData[activeDepartment].sections[activeSection].subsections[
-          activeSubsection
-        ].groups
-      ) {
-        const groupName =
+      onCategorySelect({
+        department: activeDepartment,
+        departmentName: catalogData[activeDepartment].name,
+        section: activeSection,
+        sectionName: catalogData[activeDepartment].sections[activeSection].name,
+        subsection: activeSubsection,
+        subsectionName:
           catalogData[activeDepartment].sections[activeSection].subsections[
             activeSubsection
-          ].groups[groupId];
-
-        onCategorySelect({
-          department: activeDepartment,
-          departmentName: catalogData[activeDepartment].name,
-          section: activeSection,
-          sectionName:
-            catalogData[activeDepartment].sections[activeSection].name,
-          subsection: activeSubsection,
-          subsectionName:
-            catalogData[activeDepartment].sections[activeSection].subsections[
-              activeSubsection
-            ].name,
-          group: groupId,
-          groupName: groupName,
-        });
-      }
+          ].name,
+        group: groupId,
+        groupName: groupName,
+      });
     }
+    // Закрываем каталог после выбора
+    setIsOpen(false);
   };
 
   // Получаем активные разделы
@@ -550,7 +621,7 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
         <img src="/icons/icon4.svg" alt="" />
       </CatalogButton>
 
-      <CatalogDropdown isOpen={isOpen}>
+      <CatalogDropdown isOpen={isOpen} onMouseLeave={handleCatalogMouseLeave}>
         {isLoading ? (
           <LoadingIndicator>Загрузка каталога...</LoadingIndicator>
         ) : error ? (
@@ -568,6 +639,7 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
                       key={departmentId}
                       active={departmentId === activeDepartment}
                       onClick={() => handleDepartmentClick(departmentId)}
+                      onMouseEnter={() => handleDepartmentHover(departmentId)}
                     >
                       <CategoryItemContent>
                         <CategoryCode hideInProduction={true}>
@@ -594,6 +666,7 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
                       key={sectionId}
                       active={sectionId === activeSection}
                       onClick={() => handleSectionClick(sectionId)}
+                      onMouseEnter={() => handleSectionHover(sectionId)}
                     >
                       <CategoryItemContent>
                         <CategoryCode hideInProduction={true}>
@@ -619,6 +692,7 @@ const CatalogHierarchical = ({ onCategorySelect }) => {
                       key={subsectionId}
                       active={subsectionId === activeSubsection}
                       onClick={() => handleSubsectionClick(subsectionId)}
+                      onMouseEnter={() => handleSubsectionHover(subsectionId)}
                     >
                       <CategoryItemContent>
                         <CategoryCode hideInProduction={true}>

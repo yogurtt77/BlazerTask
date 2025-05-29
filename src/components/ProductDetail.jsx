@@ -1,12 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import styled from "styled-components";
 import { useProductDetails } from "../hooks/useApi";
 import { useCart } from "../context/CartContext";
+import { useProductImages } from "../hooks/useProductImage";
 
 const ProductDetailContainer = styled.div`
   padding: 24px;
   flex-grow: 1;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 ProductDetailContainer.displayName = "ProductDetailContainer";
 
@@ -61,6 +66,11 @@ const Title = styled.h1`
   max-width: 656px;
   color: #333;
   margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
 `;
 Title.displayName = "Title";
 
@@ -68,6 +78,11 @@ const ProductContent = styled.div`
   display: flex;
   gap: 24px;
   margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 16px;
+  }
 `;
 ProductContent.displayName = "ProductContent";
 
@@ -77,6 +92,12 @@ const ProductImages = styled.div`
   border-radius: 8px;
   display: flex;
   gap: 16px;
+
+  @media (max-width: 768px) {
+    flex: none;
+    flex-direction: column;
+    gap: 12px;
+  }
 `;
 ProductImages.displayName = "ProductImages";
 
@@ -84,6 +105,14 @@ const ThumbnailsColumn = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
+
+  @media (max-width: 768px) {
+    flex-direction: row;
+    gap: 8px;
+    order: 2;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
 `;
 ThumbnailsColumn.displayName = "ThumbnailsColumn";
 
@@ -94,6 +123,12 @@ const Thumbnail = styled.div`
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
+
+  @media (max-width: 768px) {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+  }
 
   img {
     width: 100%;
@@ -112,6 +147,12 @@ const MainImage = styled.div`
   border-radius: 8px;
   overflow: hidden;
 
+  @media (max-width: 768px) {
+    order: 1;
+    height: 250px;
+    border: 1px solid #e0e0e0;
+  }
+
   img {
     width: 100%;
     height: 100%;
@@ -127,6 +168,12 @@ const ProductInfo = styled.div`
   background-color: white;
   border-radius: 8px;
   padding: 24px 16.5px;
+
+  @media (max-width: 768px) {
+    max-width: none;
+    max-height: none;
+    padding: 16px;
+  }
 `;
 ProductInfo.displayName = "ProductInfo";
 
@@ -136,6 +183,11 @@ const ProductInfoTitle = styled.h2`
   line-height: 150%;
   color: #333;
   margin-bottom: 16px;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
 `;
 ProductInfoTitle.displayName = "ProductInfoTitle";
 
@@ -176,6 +228,11 @@ const TabsHeader = styled.div`
   display: flex;
   border-bottom: 1px solid #e0e0e0;
   margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
 `;
 TabsHeader.displayName = "TabsHeader";
 
@@ -187,6 +244,13 @@ const Tab = styled.div`
   cursor: pointer;
   border-bottom: ${(props) => (props.active ? "2px solid #0066cc" : "none")};
   margin-bottom: -1px;
+
+  @media (max-width: 768px) {
+    padding: 8px 16px;
+    font-size: 14px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 `;
 Tab.displayName = "Tab";
 
@@ -219,6 +283,22 @@ const Table = styled.table`
 
   tr:last-child td {
     border-bottom: none;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+
+    th,
+    td {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    /* Скрываем некоторые колонки на мобильных */
+    th:nth-child(n + 5),
+    td:nth-child(n + 5) {
+      display: none;
+    }
   }
 `;
 Table.displayName = "Table";
@@ -275,15 +355,57 @@ const CartButton = styled(StyledButton)`
 `;
 CartButton.displayName = "CartButton";
 
+// Функция для загрузки выбранной категории из localStorage
+const loadSelectedCategory = () => {
+  try {
+    const category = localStorage.getItem("priceList.selectedCategory");
+    return category ? JSON.parse(category) : null;
+  } catch (error) {
+    console.error("Ошибка при загрузке выбранной категории:", error);
+    return null;
+  }
+};
+
 const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("sellers");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const { addToCart } = useCart();
 
   // Используем React Query для получения данных о продукте
   const { data: product, isLoading, error } = useProductDetails(productId);
+
+  // Используем хук для загрузки изображений товара
+  const { images: productImages, isLoading: imagesLoading } =
+    useProductImages(productId);
+
+  // Загружаем выбранную категорию при монтировании компонента
+  useEffect(() => {
+    const category = loadSelectedCategory();
+    setSelectedCategory(category);
+  }, []);
+
+  // Функция для генерации текста категории для хлебных крошек
+  const getCategoryBreadcrumbText = () => {
+    if (!selectedCategory) {
+      return "Прайс листы";
+    }
+
+    // Возвращаем самый глубокий уровень категории
+    if (selectedCategory.groupName) {
+      return selectedCategory.groupName;
+    } else if (selectedCategory.subsectionName) {
+      return selectedCategory.subsectionName;
+    } else if (selectedCategory.sectionName) {
+      return selectedCategory.sectionName;
+    } else if (selectedCategory.departmentName) {
+      return selectedCategory.departmentName;
+    }
+
+    return "Прайс листы";
+  };
 
   const handleBack = () => {
     navigate(-1); // Возврат на предыдущую страницу
@@ -291,6 +413,12 @@ const ProductDetail = () => {
 
   // Функция для добавления товара в корзину
   const handleAddToCart = (supplier) => {
+    // Получаем первое изображение из загруженных или заглушку
+    const productImage =
+      productImages.length > 0
+        ? productImages[0].full
+        : "/images/placeholder.png";
+
     // Создаем объект товара с правильными именами свойств для корзины
     const cartItem = {
       id: product.MaterialId + "-" + supplier.SupplierId, // Уникальный ID для товара от конкретного поставщика
@@ -301,7 +429,7 @@ const ProductDetail = () => {
       wholesalePrice: supplier.WholesalePrice
         ? parseFloat(supplier.WholesalePrice)
         : null,
-      image: product.ImageUrl || "/images/CardImage.png",
+      image: productImage,
       supplierId: supplier.SupplierId,
       supplierName: supplier.SupplierName,
     };
@@ -311,27 +439,6 @@ const ProductDetail = () => {
     // Показываем уведомление пользователю
     alert("Товар добавлен в корзину");
   };
-
-  // Создаем массив изображений на основе данных продукта
-  const productImages = product
-    ? [
-        {
-          thumbnail: product.ImageUrl || "/images/CardImage.png",
-          full: product.ImageUrl || "/images/CardImage.png",
-          alt: `${product.MaterialName || "Товар"} - изображение 1`,
-        },
-        {
-          thumbnail: product.ImageUrl || "/images/CardImage.png",
-          full: product.ImageUrl || "/images/CardImage.png",
-          alt: `${product.MaterialName || "Товар"} - изображение 2`,
-        },
-        {
-          thumbnail: product.ImageUrl || "/images/CardImage.png",
-          full: product.ImageUrl || "/images/CardImage.png",
-          alt: `${product.MaterialName || "Товар"} - изображение 3`,
-        },
-      ]
-    : [];
 
   // Используем данные о поставщиках из объекта product или пустой массив, если данных нет
   const suppliers = product && product.Suppliers ? product.Suppliers : [];
@@ -406,23 +513,6 @@ const ProductDetail = () => {
             strokeLinejoin="round"
           />
         </svg>
-        <Link to="/price-list">Проект листовой холодный</Link>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <path
-            d="M6 12L10 8L6 4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
         <span aria-current="page">
           {product ? product.MaterialName : "Загрузка..."}
         </span>
@@ -433,26 +523,81 @@ const ProductDetail = () => {
       <ProductContent>
         <ProductImages as="section" aria-label="Изображения продукта">
           <ThumbnailsColumn>
-            {productImages.map((image, index) => (
-              <Thumbnail
-                key={index}
-                active={activeImageIndex === index}
-                onClick={() => setActiveImageIndex(index)}
-                aria-label={`Миниатюра ${index + 1}`}
-                aria-pressed={activeImageIndex === index}
-              >
-                <img src={image.thumbnail} alt={`${image.alt} - миниатюра`} />
-              </Thumbnail>
-            ))}
+            {imagesLoading
+              ? // Показываем скелетон во время загрузки
+                Array.from({ length: 3 }).map((_, index) => (
+                  <Thumbnail key={index} style={{ backgroundColor: "#f5f5f5" }}>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        backgroundColor: "#e0e0e0",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#999",
+                      }}
+                    >
+                      Загрузка...
+                    </div>
+                  </Thumbnail>
+                ))
+              : productImages.length > 0
+              ? productImages.map((image, index) => (
+                  <Thumbnail
+                    key={index}
+                    active={activeImageIndex === index}
+                    onClick={() => setActiveImageIndex(index)}
+                    aria-label={`Миниатюра ${index + 1}`}
+                    aria-pressed={activeImageIndex === index}
+                  >
+                    <img
+                      src={image.thumbnail}
+                      alt={`${image.alt} - миниатюра`}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/images/placeholder.png";
+                      }}
+                    />
+                  </Thumbnail>
+                ))
+              : // Показываем заглушки если нет изображений
+                Array.from({ length: 3 }).map((_, index) => (
+                  <Thumbnail key={index}>
+                    <img
+                      src="/images/placeholder.png"
+                      alt={`Заглушка ${index + 1}`}
+                    />
+                  </Thumbnail>
+                ))}
           </ThumbnailsColumn>
           <MainImage>
-            {productImages.length > 0 ? (
+            {imagesLoading ? (
+              <div
+                style={{
+                  width: "100%",
+                  height: "400px",
+                  backgroundColor: "#f5f5f5",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#999",
+                }}
+              >
+                Загрузка изображения...
+              </div>
+            ) : productImages.length > 0 ? (
               <img
                 src={productImages[activeImageIndex].full}
                 alt={productImages[activeImageIndex].alt}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/images/placeholder.png";
+                }}
               />
             ) : (
-              <img src="/images/CardImage.png" alt="Изображение товара" />
+              // Заглушка когда нет изображений
+              <img src="/images/placeholder.png" alt="Изображение товара" />
             )}
           </MainImage>
         </ProductImages>

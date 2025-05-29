@@ -4,6 +4,7 @@ import styled from "styled-components";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import MobileMenu from "./MobileMenu";
+import { useCart } from "../context/CartContext";
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -58,22 +59,34 @@ MobileTitle.displayName = "MobileTitle";
 
 const MobileCartButton = styled.button`
   background: none;
-  border: none;
+  border: 2px solid #d6dce1;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 6px;
   width: 40px;
   height: 40px;
   position: relative;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #0066cc;
+    background-color: #f8f9fa;
+  }
+
+  img {
+    width: 24px;
+    height: 24px;
+  }
 `;
 MobileCartButton.displayName = "MobileCartButton";
 
 const CartBadge = styled.span`
   position: absolute;
-  top: 0;
-  right: 0;
+  top: -5px;
+  right: -5px;
   background-color: #0066cc;
   color: white;
   font-size: 10px;
@@ -83,6 +96,7 @@ const CartBadge = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 500;
 `;
 CartBadge.displayName = "CartBadge";
 
@@ -120,6 +134,7 @@ const Layout = () => {
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { getCartItemsCount } = useCart();
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -191,38 +206,23 @@ const Layout = () => {
 
           <MobileTitle as="h1">Прайс листы</MobileTitle>
 
-          <MobileCartButton onClick={handleCartClick} aria-label="Корзина">
-            <svg
+          <MobileCartButton
+            onClick={handleCartClick}
+            aria-label={`Корзина, ${getCartItemsCount()} товаров`}
+          >
+            <img
+              src="/icons/mainbusket.svg"
               width="24"
               height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z"
-                stroke="#333"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z"
-                stroke="#333"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6"
-                stroke="#333"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <CartBadge aria-label="3 товара в корзине">3</CartBadge>
+              alt="Иконка корзины"
+            />
+            {getCartItemsCount() > 0 && (
+              <CartBadge
+                aria-label={`${getCartItemsCount()} товаров в корзине`}
+              >
+                {getCartItemsCount()}
+              </CartBadge>
+            )}
           </MobileCartButton>
         </MobileHeader>
 

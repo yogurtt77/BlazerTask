@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { useCart } from "../context/CartContext";
+import { useProductImage } from "../hooks/useProductImage";
 
 const Card = styled.div`
   background-color: white;
@@ -27,11 +28,14 @@ const ImageContainer = styled.div`
   align-items: center;
   height: 160px; /* Фиксированная высота */
   padding: 12px;
+  background-color: ${(props) => (props.isLoading ? "#f5f5f5" : "transparent")};
 
   img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+    transition: opacity 0.3s ease;
+    opacity: ${(props) => (props.isLoading ? 0.5 : 1)};
   }
 `;
 ImageContainer.displayName = "ImageContainer";
@@ -80,6 +84,7 @@ const ButtonContainer = styled.div`
   justify-content: space-between;
   @media (max-width: 480px) {
     flex-direction: column;
+    gap: 10px;
   }
 `;
 ButtonContainer.displayName = "ButtonContainer";
@@ -117,6 +122,7 @@ CartButton.displayName = "CartButton";
 
 const ProductCard = ({ product, onProductClick }) => {
   const { addToCart } = useCart();
+  const { imageUrl, isLoading } = useProductImage(product.MaterialId);
 
   const handleCardClick = () => {
     if (onProductClick) {
@@ -136,7 +142,7 @@ const ProductCard = ({ product, onProductClick }) => {
       wholesalePrice: product.WholesalePrice
         ? parseFloat(product.WholesalePrice)
         : null,
-      image: product.ImageUrl || "/images/CardImage.png",
+      image: imageUrl,
     };
 
     addToCart(cartItem);
@@ -154,7 +160,7 @@ const ProductCard = ({ product, onProductClick }) => {
       wholesalePrice: product.WholesalePrice
         ? parseFloat(product.WholesalePrice)
         : null,
-      image: product.ImageUrl || "/images/CardImage.png",
+      image: imageUrl,
     };
 
     // Добавляем товар в корзину и можно перенаправить на страницу оформления заказа
@@ -165,15 +171,15 @@ const ProductCard = ({ product, onProductClick }) => {
 
   return (
     <Card as="article" onClick={handleCardClick}>
-      <ImageContainer>
+      <ImageContainer isLoading={isLoading}>
         <img
-          src={product.ImageUrl || "/images/CardImage.png"}
+          src={imageUrl}
           alt={product.MaterialName}
           loading="lazy" // Ленивая загрузка изображений
           decoding="async" // Асинхронное декодирование изображений
           onError={(e) => {
             e.target.onerror = null; // Предотвращаем бесконечную рекурсию
-            e.target.src = "/images/CardImage.png"; // Запасное изображение при ошибке
+            e.target.src = "/images/placeholder.png"; // Заглушка при ошибке
           }}
         />
       </ImageContainer>

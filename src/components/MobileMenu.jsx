@@ -153,7 +153,13 @@ const MobileMenu = ({ isOpen, onClose }) => {
   const handleItemClick = (itemName, path) => {
     setActiveItem(itemName);
     if (path) {
-      navigate(path);
+      if (path.startsWith("http")) {
+        // Если это внешняя ссылка, открываем в новой вкладке
+        window.open(path, "_blank");
+      } else {
+        // Если это внутренняя ссылка, используем navigate
+        navigate(path);
+      }
       onClose(); // Закрываем мобильное меню после перехода
     }
   };
@@ -177,7 +183,12 @@ const MobileMenu = ({ isOpen, onClose }) => {
         <MenuItem>
           <MenuLink
             active={activeItem === "Создать тендер"}
-            onClick={() => handleItemClick("Создать тендер", "/create-tender")}
+            onClick={() =>
+              handleItemClick(
+                "Создать тендер",
+                "https://sadi.kz/PurchaseNew/CreateNewTender"
+              )
+            }
           >
             <div style={{ display: "flex", alignItems: "center" }}>
               <MenuIcon src="/icons/Icon1.svg" alt="иконка" />
@@ -189,7 +200,12 @@ const MobileMenu = ({ isOpen, onClose }) => {
         <MenuItem>
           <MenuLink
             active={activeItem === "Найти тендер"}
-            onClick={() => handleItemClick("Найти тендер", "/find-tender")}
+            onClick={() =>
+              handleItemClick(
+                "Найти тендер",
+                "https://sadi.kz/PurchaseNew/CreateNewTender"
+              )
+            }
           >
             <div style={{ display: "flex", alignItems: "center" }}>
               <MenuIcon src="/icons/Icon2.svg" alt="иконка" />
@@ -233,7 +249,12 @@ const MobileMenu = ({ isOpen, onClose }) => {
               <SubMenuItem>
                 <SubMenuLink
                   active={activeItem === "Создать тендер (подменю)"}
-                  onClick={() => handleItemClick("Создать тендер (подменю)")}
+                  onClick={() =>
+                    handleItemClick(
+                      "Создать тендер (подменю)",
+                      "https://sadi.kz/PurchaseNew/CreateNewTender"
+                    )
+                  }
                 >
                   Создать тендер
                 </SubMenuLink>
@@ -241,7 +262,12 @@ const MobileMenu = ({ isOpen, onClose }) => {
               <SubMenuItem>
                 <SubMenuLink
                   active={activeItem === "Найти тендер (подменю)"}
-                  onClick={() => handleItemClick("Найти тендер (подменю)")}
+                  onClick={() =>
+                    handleItemClick(
+                      "Найти тендер (подменю)",
+                      "https://sadi.kz/PurchaseNew/CreateNewTender"
+                    )
+                  }
                 >
                   Найти тендер
                 </SubMenuLink>

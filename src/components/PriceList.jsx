@@ -69,10 +69,56 @@ const ProductGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 24px;
+  transition: opacity 0.3s ease-in-out;
 
   /* Все карточки в строке будут одинаковой высоты */
   & > * {
     height: 100%;
+    animation: fadeInUp 0.4s ease-out;
+    animation-fill-mode: both;
+  }
+
+  /* Анимация появления карточек */
+  & > *:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+  & > *:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  & > *:nth-child(3) {
+    animation-delay: 0.15s;
+  }
+  & > *:nth-child(4) {
+    animation-delay: 0.2s;
+  }
+  & > *:nth-child(5) {
+    animation-delay: 0.25s;
+  }
+  & > *:nth-child(6) {
+    animation-delay: 0.3s;
+  }
+  & > *:nth-child(7) {
+    animation-delay: 0.35s;
+  }
+  & > *:nth-child(8) {
+    animation-delay: 0.4s;
+  }
+  & > *:nth-child(9) {
+    animation-delay: 0.45s;
+  }
+  & > *:nth-child(10) {
+    animation-delay: 0.5s;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @media (max-width: 768px) {
@@ -92,6 +138,8 @@ const ActiveFilters = styled.div`
   gap: 8px;
   margin-top: 16px;
   margin-bottom: 16px;
+  min-height: 32px; /* Резервируем минимальную высоту для предотвращения сдвига */
+  align-items: flex-start;
 `;
 ActiveFilters.displayName = "ActiveFilters";
 
@@ -181,6 +229,7 @@ const PriceList = () => {
   );
   const [searchQuery, setSearchQuery] = useState(initialState.query);
   const [currentPage, setCurrentPage] = useState(initialState.page);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const PAGE_SIZE = 20; // Размер страницы для пагинации
 
   // Получаем продукты с пагинацией
@@ -390,33 +439,60 @@ const PriceList = () => {
   };
 
   const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
-    // Сбрасываем поисковый запрос при выборе категории
-    setSearchQuery("");
-    // Сбрасываем страницу при изменении категории
-    setCurrentPage(1);
+    // Запускаем анимацию перехода
+    setIsTransitioning(true);
 
-    // Сохраняем состояние фильтров
-    saveFiltersState(category, "", 1);
+    // Небольшая задержка для плавности
+    setTimeout(() => {
+      setSelectedCategory(category);
+      // Сбрасываем поисковый запрос при выборе категории
+      setSearchQuery("");
+      // Сбрасываем страницу при изменении категории
+      setCurrentPage(1);
+
+      // Сохраняем состояние фильтров
+      saveFiltersState(category, "", 1);
+
+      // Завершаем анимацию перехода
+      setTimeout(() => setIsTransitioning(false), 100);
+    }, 150);
   };
 
   const handleClearFilter = () => {
-    setSelectedCategory(null);
-    // Сбрасываем страницу при очистке фильтра
-    setCurrentPage(1);
+    // Запускаем анимацию перехода
+    setIsTransitioning(true);
 
-    // Сохраняем состояние фильтров
-    saveFiltersState(null, searchQuery, 1);
+    setTimeout(() => {
+      setSelectedCategory(null);
+      // Сбрасываем страницу при очистке фильтра
+      setCurrentPage(1);
+
+      // Сохраняем состояние фильтров
+      saveFiltersState(null, searchQuery, 1);
+
+      // Завершаем анимацию перехода
+      setTimeout(() => setIsTransitioning(false), 100);
+    }, 150);
   };
 
   const handleSearch = (query) => {
-    setSearchQuery(query);
-    // НЕ сбрасываем категорию при поиске, чтобы работала двойная фильтрация
-    // Сбрасываем страницу при поиске
-    setCurrentPage(1);
+    // Запускаем анимацию перехода только если запрос изменился
+    if (query !== searchQuery) {
+      setIsTransitioning(true);
 
-    // Сохраняем состояние фильтров
-    saveFiltersState(selectedCategory, query, 1);
+      setTimeout(() => {
+        setSearchQuery(query);
+        // НЕ сбрасываем категорию при поиске, чтобы работала двойная фильтрация
+        // Сбрасываем страницу при поиске
+        setCurrentPage(1);
+
+        // Сохраняем состояние фильтров
+        saveFiltersState(selectedCategory, query, 1);
+
+        // Завершаем анимацию перехода
+        setTimeout(() => setIsTransitioning(false), 100);
+      }, 150);
+    }
   };
 
   // Обработчик изменения страницы
@@ -431,7 +507,7 @@ const PriceList = () => {
 
   return (
     <PriceListContainer as="section">
-      <Title as="h1">Прайс листы</Title>
+      <Title as="h1">Строительные материалы инструменты оборудование</Title>
 
       <Description>
         Здесь Вы можете находить ценовые предложения наших партнеров. Если Вы
@@ -462,43 +538,41 @@ const PriceList = () => {
         </div>
       )}
 
-      {(selectedCategory || searchQuery) && (
-        <ActiveFilters role="status" aria-live="polite">
-          {selectedCategory && (
-            <FilterTag>
-              {selectedCategory.groupName
-                ? `Группа: ${selectedCategory.groupName}`
-                : selectedCategory.subsectionName
-                ? `Подраздел: ${selectedCategory.subsectionName}`
-                : selectedCategory.sectionName
-                ? `Раздел: ${selectedCategory.sectionName}`
-                : `Отдел: ${selectedCategory.departmentName}`}
-              <button
-                onClick={handleClearFilter}
-                aria-label="Очистить фильтр категории"
-              >
-                ×
-              </button>
-            </FilterTag>
-          )}
+      <ActiveFilters role="status" aria-live="polite">
+        {selectedCategory && (
+          <FilterTag>
+            {selectedCategory.groupName
+              ? `Группа: ${selectedCategory.groupName}`
+              : selectedCategory.subsectionName
+              ? `Подраздел: ${selectedCategory.subsectionName}`
+              : selectedCategory.sectionName
+              ? `Раздел: ${selectedCategory.sectionName}`
+              : `Отдел: ${selectedCategory.departmentName}`}
+            <button
+              onClick={handleClearFilter}
+              aria-label="Очистить фильтр категории"
+            >
+              ×
+            </button>
+          </FilterTag>
+        )}
 
-          {searchQuery && (
-            <FilterTag>
-              Поиск: {searchQuery}
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  // Сохраняем состояние фильтров без поискового запроса
-                  saveFiltersState(selectedCategory, "", currentPage);
-                }}
-                aria-label="Очистить поисковый запрос"
-              >
-                ×
-              </button>
-            </FilterTag>
-          )}
-        </ActiveFilters>
-      )}
+        {searchQuery && (
+          <FilterTag>
+            Поиск: {searchQuery}
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                // Сохраняем состояние фильтров без поискового запроса
+                saveFiltersState(selectedCategory, "", currentPage);
+              }}
+              aria-label="Очистить поисковый запрос"
+            >
+              ×
+            </button>
+          </FilterTag>
+        )}
+      </ActiveFilters>
 
       {/* Отладочная информация о выбранной категории - скрыта в продакшн */}
       {false && selectedCategory && (
@@ -555,10 +629,27 @@ const PriceList = () => {
             </div>
           ) : (
             <>
-              <ProductGrid as="ul" aria-label="Список товаров">
+              <ProductGrid
+                as="ul"
+                aria-label="Список товаров"
+                style={{
+                  opacity: isTransitioning ? 0.3 : 1,
+                  transform: isTransitioning
+                    ? "translateY(10px)"
+                    : "translateY(0)",
+                  transition:
+                    "opacity 0.3s ease-in-out, transform 0.3s ease-in-out",
+                }}
+              >
                 {/* Показываем данные с индикацией загрузки при обновлении */}
-                {productsToDisplay.map((product) => (
-                  <li key={product.MaterialId} style={{ listStyle: "none" }}>
+                {productsToDisplay.map((product, index) => (
+                  <li
+                    key={product.MaterialId}
+                    style={{
+                      listStyle: "none",
+                      animationDelay: `${index * 0.05}s`,
+                    }}
+                  >
                     {isFetching && !isLoading ? (
                       <ProductCardSkeleton />
                     ) : (

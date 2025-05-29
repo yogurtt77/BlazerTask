@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useCart } from "../context/CartContext";
@@ -89,6 +89,118 @@ const CartTable = styled.table`
   tr:last-child td {
     border-bottom: none;
   }
+
+  @media (max-width: 768px) {
+    display: none; /* Скрываем таблицу на мобильных */
+  }
+`;
+
+const MobileCartContainer = styled.div`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: block;
+  }
+`;
+
+const MobileCartItem = styled.div`
+  background-color: white;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e0e0;
+`;
+
+const MobileProductHeader = styled.div`
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+`;
+
+const MobileProductInfo = styled.div`
+  flex: 1;
+  margin-left: 12px;
+`;
+
+const MobileProductName = styled.h3`
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+`;
+
+const MobilePriceGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+`;
+
+const MobilePriceItem = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const MobilePriceLabel = styled.span`
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+  font-weight: 500;
+`;
+
+const MobilePriceValue = styled.span`
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+`;
+
+const MobileQuantityContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+`;
+
+const MobileQuantityLabel = styled.span`
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+`;
+
+const MobileActions = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+`;
+
+const MobileTotalPrice = styled.span`
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+`;
+
+const MobileRemoveButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #ff3b30;
+    background-color: #fff5f5;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
 `;
 
 const ProductName = styled.div`
@@ -136,6 +248,11 @@ const ButtonsContainer = styled.div`
   display: flex;
   gap: 16px;
   margin-top: 24px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 12px;
+  }
 `;
 
 const StyledButton = styled.button`
@@ -170,9 +287,47 @@ const SecondaryButton = styled(StyledButton)`
 `;
 SecondaryButton.displayName = "SecondaryButton";
 
+// Функция для загрузки выбранной категории из localStorage
+const loadSelectedCategory = () => {
+  try {
+    const category = localStorage.getItem("priceList.selectedCategory");
+    return category ? JSON.parse(category) : null;
+  } catch (error) {
+    console.error("Ошибка при загрузке выбранной категории:", error);
+    return null;
+  }
+};
+
 const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useCart();
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // Загружаем выбранную категорию при монтировании компонента
+  useEffect(() => {
+    const category = loadSelectedCategory();
+    setSelectedCategory(category);
+  }, []);
+
+  // Функция для генерации текста категории для хлебных крошек
+  const getCategoryBreadcrumbText = () => {
+    if (!selectedCategory) {
+      return "Прайс листы";
+    }
+
+    // Возвращаем самый глубокий уровень категории
+    if (selectedCategory.groupName) {
+      return selectedCategory.groupName;
+    } else if (selectedCategory.subsectionName) {
+      return selectedCategory.subsectionName;
+    } else if (selectedCategory.sectionName) {
+      return selectedCategory.sectionName;
+    } else if (selectedCategory.departmentName) {
+      return selectedCategory.departmentName;
+    }
+
+    return "Прайс листы";
+  };
 
   const handleBack = () => {
     navigate("/");
@@ -235,38 +390,6 @@ const Cart = () => {
             strokeLinejoin="round"
           />
         </svg>
-        <Link to="/">Проект листовой холодный</Link>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M6 12L10 8L6 4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <Link to="/">Сверла кольцевые алмазные диаметром 70 мм</Link>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M6 12L10 8L6 4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
         <span>Корзина</span>
       </Breadcrumbs>
 
@@ -283,6 +406,7 @@ const Cart = () => {
         </div>
       ) : (
         <>
+          {/* Десктопная версия - таблица */}
           <CartTable>
             <thead>
               <tr>
@@ -371,6 +495,99 @@ const Cart = () => {
             </tbody>
           </CartTable>
 
+          {/* Мобильная версия - карточки */}
+          <MobileCartContainer>
+            {cartItems.map((item) => (
+              <MobileCartItem key={item.id}>
+                <MobileProductHeader>
+                  <img
+                    src={item.image || "/images/CardImage.png"}
+                    alt={item.title}
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      objectFit: "contain",
+                      borderRadius: "4px",
+                    }}
+                  />
+                  <MobileProductInfo>
+                    <MobileProductName>{item.title}</MobileProductName>
+                  </MobileProductInfo>
+                  <MobileRemoveButton onClick={() => handleRemoveItem(item.id)}>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M2 4H3.33333H14"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M5.33334 4V2.66667C5.33334 2.31305 5.47382 1.97391 5.72387 1.72386C5.97392 1.47381 6.31305 1.33334 6.66667 1.33334H9.33334C9.68696 1.33334 10.0261 1.47381 10.2761 1.72386C10.5262 1.97391 10.6667 2.31305 10.6667 2.66667V4M12.6667 4V13.3333C12.6667 13.687 12.5262 14.0261 12.2761 14.2761C12.0261 14.5262 11.687 14.6667 11.3333 14.6667H4.66667C4.31305 14.6667 3.97391 14.5262 3.72386 14.2761C3.47381 14.0261 3.33334 13.687 3.33334 13.3333V4H12.6667Z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </MobileRemoveButton>
+                </MobileProductHeader>
+
+                <MobilePriceGrid>
+                  <MobilePriceItem>
+                    <MobilePriceLabel>РОЗНИЦА</MobilePriceLabel>
+                    <MobilePriceValue>
+                      {item.retailPrice
+                        ? item.retailPrice.toLocaleString()
+                        : "По запросу"}{" "}
+                      ₸
+                    </MobilePriceValue>
+                  </MobilePriceItem>
+                  <MobilePriceItem>
+                    <MobilePriceLabel>ОПТ</MobilePriceLabel>
+                    <MobilePriceValue>
+                      {item.wholesalePrice
+                        ? item.wholesalePrice.toLocaleString()
+                        : "По запросу"}{" "}
+                      ₸
+                    </MobilePriceValue>
+                  </MobilePriceItem>
+                </MobilePriceGrid>
+
+                <MobileQuantityContainer>
+                  <MobileQuantityLabel>НЕОБХОДИМОЕ КОЛ.ВО</MobileQuantityLabel>
+                  <QuantityInput
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) =>
+                      handleQuantityChange(item.id, e.target.value)
+                    }
+                    placeholder="Укажите кол.во"
+                  />
+                </MobileQuantityContainer>
+
+                <MobileActions>
+                  <div>
+                    <MobilePriceLabel>ИТОГОВАЯ ЦЕНА</MobilePriceLabel>
+                    <MobileTotalPrice>
+                      {item.retailPrice
+                        ? calculateItemTotal(item).toLocaleString()
+                        : "По запросу"}{" "}
+                      ₸
+                    </MobileTotalPrice>
+                  </div>
+                </MobileActions>
+              </MobileCartItem>
+            ))}
+          </MobileCartContainer>
+
           <div
             style={{
               textAlign: "right",
@@ -384,7 +601,16 @@ const Cart = () => {
 
           <ButtonsContainer>
             <PrimaryButton>Оформить заказ</PrimaryButton>
-            <SecondaryButton>Создать тендер</SecondaryButton>
+            <SecondaryButton
+              onClick={() =>
+                window.open(
+                  "https://sadi.kz/PurchaseNew/CreateNewTender",
+                  "_blank"
+                )
+              }
+            >
+              Создать тендер
+            </SecondaryButton>
             <SecondaryButton onClick={() => navigate("/")}>
               Добавить еще позиции
             </SecondaryButton>

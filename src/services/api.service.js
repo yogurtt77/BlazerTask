@@ -6,6 +6,8 @@ const cache = {
   products: null,
   categoryProducts: {},
   paginatedProducts: {}, // Кэш для пагинированных данных
+  photos: null, // Кэш для фотографий
+  productPhotos: {}, // Кэш для фотографий конкретных продуктов
 };
 
 /**
@@ -611,6 +613,93 @@ const ApiService = {
         error
       );
       throw error;
+    }
+  },
+
+  /**
+   * Получить все фотографии товаров
+   * @returns {Promise<Array>} - Список фотографий
+   */
+  getPhotos: async () => {
+    if (API_CONFIG.USE_LOCAL_JSON) {
+      // Для локальных JSON-файлов возвращаем пустой массив
+      return [];
+    }
+
+    // Если у нас уже есть кэшированные фотографии, возвращаем их
+    if (cache.photos) {
+      return cache.photos;
+    }
+
+    try {
+      const photos = await fetchApi(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PHOTOS}`,
+        {},
+        "photos"
+      );
+
+      return photos;
+    } catch (error) {
+      console.error("Ошибка при получении фотографий:", error);
+      return []; // Возвращаем пустой массив при ошибке
+    }
+  },
+
+  /**
+   * Получить фотографии для конкретного товара
+   * @param {number|string} materialId - ID товара
+   * @returns {Promise<Array>} - Список фотографий товара
+   */
+  getProductPhotos: async (materialId) => {
+    if (API_CONFIG.USE_LOCAL_JSON) {
+      // Для локальных JSON-файлов возвращаем пустой массив
+      return [];
+    }
+
+    const materialIdStr = materialId.toString();
+
+    // Проверяем, есть ли фотографии для этого товара в кэше
+    if (cache.productPhotos[materialIdStr]) {
+      return cache.productPhotos[materialIdStr];
+    }
+
+    try {
+      // Получаем все фотографии
+      const allPhotos = await ApiService.getPhotos();
+
+      // Фильтруем фотографии для конкретного товара
+      const productPhotos = allPhotos.filter(
+        (photo) => photo.MaterialId.toString() === materialIdStr
+      );
+
+      // Сохраняем в кэш
+      cache.productPhotos[materialIdStr] = productPhotos;
+
+      return productPhotos;
+    } catch (error) {
+      console.error(
+        `Ошибка при получении фотографий для товара ${materialId}:`,
+        error
+      );
+      return []; // Возвращаем пустой массив при ошибке
+    }
+  },
+
+  /**
+   * Получить первую фотографию товара (для карточки)
+   * @param {number|string} materialId - ID товара
+   * @returns {Promise<Object|null>} - Объект фотографии или null
+   */
+  getProductMainPhoto: async (materialId) => {
+    try {
+      const photos = await ApiService.getProductPhotos(materialId);
+      return photos.length > 0 ? photos[0] : null;
+    } catch (error) {
+      console.error(
+        `Ошибка при получении главной фотографии для товара ${materialId}:`,
+        error
+      );
+      return null;
     }
   },
 };

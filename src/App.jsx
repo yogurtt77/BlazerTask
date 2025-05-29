@@ -5,7 +5,6 @@ import Layout from "./components/Layout";
 import PriceList from "./components/PriceList";
 import ProductDetail from "./components/ProductDetail";
 import Cart from "./components/Cart";
-import NotFound from "./components/NotFound";
 import { CartProvider } from "./context/CartContext";
 
 function App() {
@@ -18,7 +17,6 @@ function App() {
             <Route path="price-list" element={<PriceList />} />
             <Route path="product/:productId" element={<ProductDetail />} />
             <Route path="cart" element={<Cart />} />
-            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
         {/* Добавляем DevTools для React Query (только в режиме разработки) */}
